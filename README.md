@@ -21,9 +21,6 @@
 dna-lm-project/
 │
 ├── dna_lm_project.py              # Main implementation (complete)
-├── PROJECT_DOCUMENTATION.md        # Comprehensive documentation
-├── QUICK_START_GUIDE.md           # Getting started guide
-├── PRESENTATION_OUTLINE.md         # 20-minute presentation slides
 └── README.md                       # This file
 ```
 
