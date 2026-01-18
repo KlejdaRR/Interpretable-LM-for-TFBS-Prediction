@@ -21,6 +21,13 @@ from TransformerModel import TransformerModel
 from Trainer import Trainer
 from AttentionVisualizer import AttentionVisualizer
 
+# Import ENCODE data loader
+try:
+    from encode_data_loader import load_encode_peaks
+except ImportError:
+    load_encode_peaks = None
+    print("Note: encode_data_loader.py not found. Only synthetic data will be available.")
+
 
 def set_random_seed(seed: int = 42):
     """
@@ -74,9 +81,17 @@ def load_data(data_path: str = None):
         print(f"  - Negative (no binding): {n_samples - sum(labels)}")
 
     else:
-        # Load from file
-        print(f"\nLoading data from {data_path}...")
-        raise NotImplementedError("Data loading from file not yet implemented")
+        # Load real ENCODE data
+        if load_encode_peaks is not None:
+            print(f"\nLoading real ENCODE ChIP-seq data from {data_path}...")
+            sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
+
+            if not sequences:
+                print("\n⚠️  Failed to load ENCODE data. Falling back to synthetic data.")
+                return load_data(None)  # Fall back to synthetic
+        else:
+            print("\n⚠️  encode_data_loader.py not found. Using synthetic data.")
+            return load_data(None)  # Fall back to synthetic
 
     return sequences, labels
 
@@ -381,6 +396,10 @@ def main():
     print(f"\nResults saved in: {config['output_dir']}")
     print("  - best_model.pt: Trained model weights")
     print("  - attention_*.png: Attention visualization plots")
+    print("\nNext steps:")
+    print("  1. Analyze attention patterns for biological insights")
+    print("  2. Compare with known TF binding motifs")
+    print("  3. Test on real ENCODE data")
     print("=" * 70)
 
 
