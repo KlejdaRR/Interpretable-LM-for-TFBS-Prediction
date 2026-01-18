@@ -12,7 +12,6 @@ class PositionalEncoding(nn.Module):
     appears at position 5 or position 50!
 
     How it works:
-    ------------
     Uses sine and cosine functions with different frequencies:
     PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
     PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
@@ -39,18 +38,18 @@ class PositionalEncoding(nn.Module):
         # Position indices: [0, 1, 2, ..., max_len-1]
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
 
-        # Create the division term for the formula
+        # Creating the division term for the formula
         div_term = torch.exp(
             torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
         )
 
-        # Apply sine to even indices
+        # Applying sine to even indices
         pe[:, 0::2] = torch.sin(position * div_term)
 
-        # Apply cosine to odd indices
+        # Applying cosine to odd indices
         pe[:, 1::2] = torch.cos(position * div_term)
 
-        # Register as buffer (not a parameter, but should be saved with model)
+        # Registering as buffer
         self.register_buffer('pe', pe)
 
     def forward(self, x):
@@ -63,7 +62,6 @@ class PositionalEncoding(nn.Module):
         It will return:
             Tensor with positional encoding added
         """
-        # Add positional encoding
-        # self.pe[:x.size(1)] selects only the needed positions
+        # Adding positional encoding
         x = x + self.pe[:x.size(1)]
         return self.dropout(x)

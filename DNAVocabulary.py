@@ -25,7 +25,7 @@ class DNAVocabulary:
         """
         Initializing the vocabulary.
 
-        Args:
+        It will take as arguments:
             k: The length of k-mers to use (default is 6)
                  Why 6?
                - Smaller k (3-4): fewer vocabulary items, less specific
@@ -143,10 +143,10 @@ class DNAVocabulary:
         It will return:
             List of integer IDs
         """
-        # Step 1: Break into k-mers
+        # Step 1: Breaking into k-mers
         kmers = self.sequence_to_kmers(sequence)
 
-        # Step 2: Convert to IDs
+        # Step 2: Converting to IDs
         ids = []
         for kmer in kmers:
             # Getting ID, or using UNK if not in vocabulary

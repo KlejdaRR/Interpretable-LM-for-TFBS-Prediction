@@ -3,8 +3,8 @@ This is the main script that combines all components to train and evaluate
 the DNA-LM model for TFBS prediction.
 
 Usage:
-1. Prepare data (sequences and labels)
-2. Configure parameters below
+1. Preparing data (sequences and labels)
+2. Configuring parameters below
 3. Run: python main.py
 
 """
@@ -21,7 +21,7 @@ from TransformerModel import TransformerModel
 from Trainer import Trainer
 from AttentionVisualizer import AttentionVisualizer
 
-# Import ENCODE data loader
+# Importing ENCODE data loader
 try:
     from encode_data_loader import load_encode_peaks
 except ImportError:
@@ -49,9 +49,6 @@ def set_random_seed(seed: int = 42):
 def load_data(data_path: str = None):
     """
     Method that loads TFBS data.
-
-    In practice, this would load ENCODE ChIP-seq data.
-    For this demo, we will generate synthetic data.
 
     Expected data format:
     - sequences: List of DNA sequences (strings)
@@ -81,7 +78,7 @@ def load_data(data_path: str = None):
         print(f"  - Negative (no binding): {n_samples - sum(labels)}")
 
     else:
-        # Load real ENCODE data
+        # Loading real ENCODE data
         if load_encode_peaks is not None:
             print(f"\nLoading real ENCODE ChIP-seq data from {data_path}...")
             sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
@@ -126,17 +123,17 @@ def evaluate_model(model, dataloader, device):
             input_ids = batch['input_ids'].to(device)
             labels = batch['label'].to(device)
 
-            # Get predictions
+            # Getting predictions
             outputs = model(input_ids).squeeze()
             probabilities = torch.sigmoid(outputs)
             predictions = (probabilities > 0.5).float()
 
-            # Collect results
+            # Collecting results
             all_predictions.extend(predictions.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
             all_probabilities.extend(probabilities.cpu().numpy())
 
-    # Calculate metrics
+    # Calculating metrics
     metrics = {
         'accuracy': accuracy_score(all_labels, all_predictions),
         'precision': precision_score(all_labels, all_predictions, zero_division=0),
@@ -168,11 +165,11 @@ def main():
     Main training pipeline.
 
     Steps:
-    1. Load and prepare data
-    2. Create vocabulary
-    3. Create datasets and dataloaders
-    4. Train transformer model
-    5. Visualize attention (interpretability)
+    1. Loading and preparing data
+    2. Creating vocabulary
+    3. Creating datasets and dataloaders
+    4. Training transformer model
+    5. Visualizing attention (interpretability)
     """
 
     print("\n" + "=" * 70)
@@ -214,23 +211,23 @@ def main():
     for key, value in config.items():
         print(f"  {key}: {value}")
 
-    # Create output directory
+    # Creating output directory
     os.makedirs(config['output_dir'], exist_ok=True)
     print(f"\nOutput directory created: {config['output_dir']}")
 
-    # STEP 1: Set random seed
+    # STEP 1: Setting random seed
     set_random_seed(config['random_seed'])
 
-    # STEP 2: Load data
+    # STEP 2: Loading data
     sequences, labels = load_data(config['data_path'])
 
-    # STEP 3: Create vocabulary
+    # STEP 3: Creating vocabulary
     print("\n" + "-" * 70)
     print("Creating DNA vocabulary...")
     print("-" * 70)
     vocabulary = DNAVocabulary(k=config['k'])
 
-    # STEP 4: Split data (train/val/test)
+    # STEP 4: Splitting data (train/val/test)
     print("\n" + "-" * 70)
     print("Splitting data...")
     print("-" * 70)
@@ -240,7 +237,7 @@ def main():
     n_val = int((n_total - n_test) * config['val_split'])
     n_train = n_total - n_test - n_val
 
-    # Shuffle and split
+    # Shuffling and split
     indices = list(range(n_total))
     random.shuffle(indices)
 
@@ -262,7 +259,7 @@ def main():
     print(f"  Validation: {n_val} samples")
     print(f"  Test:       {n_test} samples")
 
-    # STEP 5: Create datasets
+    # STEP 5: Creating datasets
     print("\n" + "-" * 70)
     print("Creating datasets...")
     print("-" * 70)
@@ -291,12 +288,12 @@ def main():
         use_augmentation=False
     )
 
-    # STEP 6: Create data loaders
+    # STEP 6: Creating data loaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=config['batch_size'],
         shuffle=True,
-        num_workers=0  # Set to 0 to avoid multiprocessing issues
+        num_workers=0
     )
 
     val_loader = DataLoader(
@@ -311,7 +308,7 @@ def main():
         shuffle=False
     )
 
-    # STEP 7: Create and train transformer model
+    # STEP 7: Creating and train transformer model
     print("\n" + "-" * 70)
     print("Creating Transformer model...")
     print("-" * 70)
@@ -325,7 +322,7 @@ def main():
         max_seq_length=config['max_seq_length']
     )
 
-    # Train
+    # Training
     trainer = Trainer(
         model=transformer_model,
         device=config['device'],
@@ -340,7 +337,7 @@ def main():
         save_dir=config['output_dir']  # Pass the output directory
     )
 
-    # Evaluate
+    # Evaluating
     print("\n" + "-" * 70)
     print("Evaluating on test set...")
     print("-" * 70)
@@ -358,7 +355,7 @@ def main():
 
     visualizer = AttentionVisualizer(transformer_model, vocabulary)
 
-    # Visualize a few test examples
+    # Visualizing a few test examples
     print("\nGenerating attention visualizations for example sequences...")
     for i in range(min(3, len(test_sequences))):
         seq = test_sequences[i]
@@ -371,7 +368,7 @@ def main():
         attention_data = visualizer.get_attention_weights(seq)
         print(f"  Prediction: {attention_data['prediction']:.3f}")
 
-        # Create visualizations with correct paths
+        # Creating visualizations with correct paths
         heatmap_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_heatmap.png')
         importance_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_importance.png')
 
@@ -384,12 +381,12 @@ def main():
             save_path=importance_path
         )
 
-        # Find important regions
+        # Finding important regions
         regions = visualizer.find_important_regions(attention_data)
         if regions:
             print(f"  Important regions: {regions}")
 
-    # STEP 9: Save final summary
+    # STEP 9: Saving final summary
     print("\n" + "=" * 70)
     print("PIPELINE COMPLETE!")
     print("=" * 70)

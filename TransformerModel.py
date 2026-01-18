@@ -10,7 +10,6 @@ This module implements a transformer model using standard PyTorch components.
 - Attention: The model learns which parts of the sequence are important for prediction
 """
 
-import torch
 import torch.nn as nn
 import math
 from PositionalEncoding import PositionalEncoding
@@ -58,12 +57,12 @@ class TransformerModel(nn.Module):
         self.model_name = "Transformer TFBS Predictor"
 
         # LAYER 1: EMBEDDING
-        # Converts token IDs to dense vectors
+        # It converts token IDs to dense vectors
         # For example: token 42 → [0.1, -0.3, 0.7, ..., 0.2] (d_model numbers)
         self.embedding = nn.Embedding(
             num_embeddings=vocab_size,
             embedding_dim=d_model,
-            padding_idx=0  # Token ID 0 is PAD, should be ignored
+            padding_idx=0  # Token ID 0 is PAD, therefore it should be ignored
         )
 
         # LAYER 2: POSITIONAL ENCODING
@@ -90,7 +89,7 @@ class TransformerModel(nn.Module):
         )
 
         # LAYER 4: CLASSIFICATION HEAD
-        # Takes the transformer output and makes final prediction
+        # It takes the transformer output and makes final prediction
         # We'll use the first token (CLS token) for classification
         self.classifier = nn.Sequential(
             nn.Linear(d_model, d_model // 2),  # Reducing dimensions
@@ -150,21 +149,21 @@ class TransformerModel(nn.Module):
             attention_weights: (optional) For interpretability
         """
         # STEP 1: EMBEDDING
-        # Convert IDs to vectors and scale
+        # Converting IDs to vectors and scale
         # Shape: (batch_size, seq_length, d_model)
         x = self.embedding(input_ids) * math.sqrt(self.d_model)
 
-        # STEP 2: ADD POSITIONAL ENCODING
+        # STEP 2: ADDING POSITIONAL ENCODING
         x = self.pos_encoder(x)
 
-        # STEP 3: CREATE PADDING MASK
-        # Tell the transformer to ignore PAD tokens (ID = 0)
+        # STEP 3: CREATING PADDING MASK
+        # Telling the transformer to ignore PAD tokens (ID = 0)
         # Shape: (batch_size, seq_length)
-        # True = ignore this position, False = pay attention to it
+        # True = it will ignore this position, False = it will pay attention to it
         padding_mask = (input_ids == 0)
 
         # STEP 4: TRANSFORMER ENCODING
-        # The transformer learns to focus on important parts of the sequence
+        # The transformer will learn to focus on important parts of the sequence
         x = self.transformer_encoder(
             x,
             src_key_padding_mask=padding_mask
@@ -176,13 +175,11 @@ class TransformerModel(nn.Module):
         cls_output = x[:, 0, :]
 
         # STEP 6: CLASSIFICATION
-        # Make final prediction
+        # Making final prediction
         # Shape: (batch_size, 1)
         predictions = self.classifier(cls_output)
 
         if return_attention:
-            # Note: Getting attention weights from PyTorch's transformer requires
-            # some additional work. For simplicity, we'll handle this separately.
             return predictions, None
 
         return predictions

@@ -64,12 +64,11 @@ class Trainer:
 
         # LEARNING RATE SCHEDULER: Adjusting learning rate during training
         # Reducing learning rate when validation loss stops improving
-        # This helps fine-tune the model in later stages
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer,
-            mode='min',  # Minimize validation loss
-            factor=0.5,  # Reduce LR by half
-            patience=3  # Wait 3 epochs before reducing
+            mode='min',  # Minimizing validation loss
+            factor=0.5,  # Reducing LR by half
+            patience=3  # Waiting 3 epochs before reducing
 
         )
 
@@ -77,7 +76,7 @@ class Trainer:
         # BCEWithLogitsLoss = Binary Cross Entropy Loss
         self.criterion = nn.BCEWithLogitsLoss()
 
-        # Training history (for plotting later)
+        # Training history
         self.history = {
             'train_loss': [],
             'val_loss': [],
@@ -99,52 +98,51 @@ class Trainer:
         # This enables dropout and batch normalization training behavior
         self.model.train()
 
-        # Track statistics
+        # Tracking statistics
         total_loss = 0.0
         correct_predictions = 0
         total_samples = 0
 
-        # Iterate through batches
+        # Iterating through batches
         for batch_idx, batch in enumerate(dataloader):
-            # STEP 1: Move data to device (GPU/CPU)
+            # STEP 1: Moving data to device (GPU/CPU)
             input_ids = batch['input_ids'].to(self.device)
             labels = batch['label'].to(self.device)
 
-            # STEP 2: Forward pass - get model predictions
+            # STEP 2: Forward pass - getting model predictions
             predictions = self.model(input_ids).squeeze()
 
-            # STEP 3: Calculate loss (how wrong are we?)
+            # STEP 3: Calculating loss
             loss = self.criterion(predictions, labels)
 
-            # STEP 4: Backward pass - calculate gradients
-            # Reset gradients from previous iteration
+            # STEP 4: Backward pass - calculating gradients
+            # Resetting gradients from previous iteration
             self.optimizer.zero_grad()
 
-            # Calculate gradients (how to change weights to reduce loss)
+            # Calculating gradients
             loss.backward()
 
-            # Clip gradients to prevent exploding gradients
+            # Clipping gradients to prevent exploding gradients
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
-            # STEP 5: Update model weights
+            # STEP 5: Updating model weights
             self.optimizer.step()
 
-            # STEP 6: Track statistics
+            # STEP 6: Tracking statistics
             total_loss += loss.item()
 
-            # Convert predictions to binary (0 or 1)
-            # Sigmoid converts raw scores to probabilities [0, 1]
-            # Then threshold at 0.5
+            # Converting predictions to binary (0 or 1)
+            # Sigmoid will convert raw scores to probabilities [0, 1], and then threshold at 0.5
             binary_preds = (torch.sigmoid(predictions) > 0.5).float()
             correct_predictions += (binary_preds == labels).sum().item()
             total_samples += labels.size(0)
 
-            # Print progress every 10 batches
+            # Printing progress every 10 batches
             if (batch_idx + 1) % 10 == 0:
                 print(f"  Batch {batch_idx + 1}/{len(dataloader)}, "
                       f"Loss: {loss.item():.4f}")
 
-        # Calculate averages
+        # Calculating averages
         avg_loss = total_loss / len(dataloader)
         accuracy = correct_predictions / total_samples
 
@@ -165,34 +163,33 @@ class Trainer:
         It will return:
             Dictionary with average loss and accuracy
         """
-        # Set model to evaluation mode
-        # This disables dropout and sets batch normalization to eval mode
+        # Setting model to evaluation mode
+        # This will disable dropout and set batch normalization to eval mode
         self.model.eval()
 
         total_loss = 0.0
         correct_predictions = 0
         total_samples = 0
 
-        # Don't calculate gradients (saves memory and computation)
+        # Here we don't calculate gradients in order to save memory and computation
         with torch.no_grad():
             for batch in dataloader:
-                # Move to device
                 input_ids = batch['input_ids'].to(self.device)
                 labels = batch['label'].to(self.device)
 
                 # Forward pass
                 predictions = self.model(input_ids).squeeze()
 
-                # Calculate loss
+                # Calculating loss
                 loss = self.criterion(predictions, labels)
 
-                # Track statistics
+                # Tracking statistics
                 total_loss += loss.item()
                 binary_preds = (torch.sigmoid(predictions) > 0.5).float()
                 correct_predictions += (binary_preds == labels).sum().item()
                 total_samples += labels.size(0)
 
-        # Calculate averages
+        # Calculating averages
         avg_loss = total_loss / len(dataloader)
         accuracy = correct_predictions / total_samples
 
@@ -226,7 +223,6 @@ class Trainer:
         print(f"Training for up to {num_epochs} epochs")
         print(f"Early stopping patience: {early_stopping_patience}")
 
-        # Create save directory if it doesn't exist
         os.makedirs(save_dir, exist_ok=True)
         model_save_path = os.path.join(save_dir, 'best_model.pt')
         print(f"Model will be saved to: {model_save_path}")
@@ -252,13 +248,13 @@ class Trainer:
             # UPDATE LEARNING RATE
             self.scheduler.step(val_metrics['loss'])
 
-            # SAVE METRICS
+            # SAVING METRICS
             self.history['train_loss'].append(train_metrics['loss'])
             self.history['train_acc'].append(train_metrics['accuracy'])
             self.history['val_loss'].append(val_metrics['loss'])
             self.history['val_acc'].append(val_metrics['accuracy'])
 
-            # PRINT PROGRESS
+            # PRINTING PROGRESS
             epoch_time = time.time() - epoch_start
             print(f"\nResults:")
             print(f"  Train Loss: {train_metrics['loss']:.4f}, "
@@ -269,11 +265,10 @@ class Trainer:
 
             # EARLY STOPPING CHECK
             if val_metrics['loss'] < best_val_loss:
-                # Improvement! Save model and reset patience
                 best_val_loss = val_metrics['loss']
                 patience_counter = 0
 
-                # Save best model
+                # Saving best model
                 try:
                     torch.save(self.model.state_dict(), model_save_path)
                     print(f"  ✓ New best model saved! (Val Loss: {best_val_loss:.4f})")
@@ -298,7 +293,7 @@ class Trainer:
         print(f"Total time: {total_time:.2f}s ({total_time / 60:.2f} minutes)")
         print(f"Best validation loss: {best_val_loss:.4f}")
 
-        # Load best model
+        # Loading best model
         if os.path.exists(model_save_path):
             print(f"\nLoading best model from {model_save_path}...")
             try:

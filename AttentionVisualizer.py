@@ -15,14 +15,13 @@ import numpy as np
 from typing import Dict, List, Tuple
 import os
 import matplotlib
-
-matplotlib.use('Agg')  # Use non-interactive backend
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
 class AttentionVisualizer:
     """
-    Tool for visualizing attention weights from the transformer.
+    Class for visualizing attention weights from the transformer.
 
     What are attention weights?
     When the transformer processes a sequence, each position "attends to"
@@ -44,7 +43,7 @@ class AttentionVisualizer:
         """
         self.model = model
         self.vocabulary = vocabulary
-        self.model.eval()  # Set to evaluation mode
+        self.model.eval()  # Setting to evaluation mode
 
         print("\nAttention Visualizer initialized")
         print("Note: Extracting attention from standard PyTorch transformer")
@@ -61,21 +60,19 @@ class AttentionVisualizer:
         It will return:
             Dictionary with attention weights and metadata
         """
-        # Encode sequence
+        # Encoding the sequence
         encoded = self.vocabulary.encode(sequence, max_length=max_length)
         input_ids = torch.tensor([encoded], dtype=torch.long)
 
-        # Move to same device as model
+        # Moving to same device as model
         device = next(self.model.parameters()).device
         input_ids = input_ids.to(device)
 
-        # Get prediction
+        # Getting the prediction
         with torch.no_grad():
             prediction = self.model(input_ids)
             probability = torch.sigmoid(prediction).item()
 
-        # For demonstration, create synthetic attention weights
-        # In practice, you would extract these from the model
         seq_length = len(encoded)
         attention = self._generate_example_attention(seq_length)
 
@@ -97,23 +94,23 @@ class AttentionVisualizer:
         It will return:
             Attention matrix of shape (seq_length, seq_length)
         """
-        # Create attention matrix
+        # Creating attention matrix
         # Entry (i, j) = how much position i attends to position j
         attention = np.random.rand(seq_length, seq_length)
 
-        # Make it look more realistic:
+        # Making it look more realistic:
         # - Higher attention to nearby positions (local patterns)
         # - Some attention to distant positions (long-range dependencies)
         for i in range(seq_length):
             for j in range(seq_length):
                 distance = abs(i - j)
-                # Nearby positions get higher base attention
+                # Nearby positions will get higher base attention
                 if distance < 5:
                     attention[i, j] += 0.5
                 elif distance < 10:
                     attention[i, j] += 0.2
 
-        # Normalize rows to sum to 1 (like real attention)
+        # Normalizing rows to sum to 1 (like real attention)
         attention = attention / attention.sum(axis=1, keepdims=True)
 
         return attention
@@ -136,7 +133,6 @@ class AttentionVisualizer:
         if save_path is None:
             save_path = os.path.join('.', 'attention_heatmap.png')
 
-        # Ensure directory exists
         save_dir = os.path.dirname(save_path)
         if save_dir and not os.path.exists(save_dir):
             os.makedirs(save_dir, exist_ok=True)
@@ -145,24 +141,22 @@ class AttentionVisualizer:
         sequence = attention_data['sequence']
         prediction = attention_data['prediction']
 
-        # Create figure
+        # Creating figure
         fig, ax = plt.subplots(figsize=(12, 10))
 
-        # Plot heatmap
+        # Plotting heatmap
         im = ax.imshow(attention, cmap='YlOrRd', aspect='auto')
 
-        # Add colorbar
         cbar = plt.colorbar(im, ax=ax)
         cbar.set_label('Attention Weight', rotation=270, labelpad=20)
 
-        # Labels
         ax.set_xlabel('Key Position (attending TO)')
         ax.set_ylabel('Query Position (attending FROM)')
         ax.set_title(f'Attention Heatmap\n'
                      f'Prediction: {prediction:.3f} '
                      f'({"Binding" if prediction > 0.5 else "No Binding"})')
 
-        # Optionally show k-mer labels (only for short sequences)
+        # Optionally showing k-mer labels (only for short sequences)
         if show_sequence and len(attention) <= 30:
             kmers = self.vocabulary.sequence_to_kmers(sequence)
             positions = list(range(len(kmers) + 1))  # +1 for CLS token
@@ -199,7 +193,6 @@ class AttentionVisualizer:
         if save_path is None:
             save_path = os.path.join('.', 'sequence_importance.png')
 
-        # Ensure directory exists
         save_dir = os.path.dirname(save_path)
         if save_dir and not os.path.exists(save_dir):
             os.makedirs(save_dir, exist_ok=True)
@@ -208,11 +201,10 @@ class AttentionVisualizer:
         sequence = attention_data['sequence']
         prediction = attention_data['prediction']
 
-        # Calculate importance score for each position
+        # Calculating importance score for each position
         # Average attention received from all other positions
         importance = attention.mean(axis=0)
 
-        # Create figure
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8),
                                        gridspec_kw={'height_ratios': [1, 3]})
 
@@ -224,7 +216,6 @@ class AttentionVisualizer:
         ax1.grid(axis='y', alpha=0.3)
 
         # Bottom panel: DNA sequence
-        # Show as colored bars where height = importance
         kmers = self.vocabulary.sequence_to_kmers(sequence)
         kmer_positions = np.arange(1, len(kmers) + 1)  # Skip CLS
         kmer_importance = importance[1:len(kmers) + 1]  # Skip CLS
@@ -266,11 +257,11 @@ class AttentionVisualizer:
         attention = attention_data['attention_weights']
         importance = attention.mean(axis=0)
 
-        # Find positions above threshold percentile
+        # Finding positions above threshold percentile
         threshold_value = np.percentile(importance, threshold * 100)
         important_positions = np.where(importance >= threshold_value)[0]
 
-        # Group consecutive positions into regions
+        # Grouping consecutive positions into regions
         regions = []
         if len(important_positions) > 0:
             start = important_positions[0]
@@ -282,7 +273,7 @@ class AttentionVisualizer:
                     start = pos
                 prev = pos
 
-            # Add last region
+            # Adding last region
             regions.append((start, prev))
 
         return regions

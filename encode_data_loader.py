@@ -1,8 +1,6 @@
 """
 ENCODE Data Loader
-==================
-
-This script loads real ENCODE ChIP-seq data and prepares it for training.
+These methods help loading real ENCODE ChIP-seq data and prepares it for training.
 """
 
 import gzip
@@ -14,13 +12,13 @@ from typing import List, Tuple
 
 def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[str], List[int]]:
     """
-    Load ENCODE ChIP-seq peaks and fetch DNA sequences.
+    Loading ENCODE ChIP-seq peaks and fetch DNA sequences.
 
-    Args:
-        peaks_file: Path to downloaded .bed.gz file (e.g., ENCFF308JDD.bed.gz)
+    It will take as arguments:
+        peaks_file: Path to downloaded .bed.gz file
         max_sequences: Maximum number of sequences to load
 
-    Returns:
+    It will return:
         (sequences, labels) tuple where sequences are DNA strings and labels are 0/1
     """
     print(f"\n{'='*70}")
@@ -34,9 +32,7 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
     labels = []
     skipped = 0
 
-    # Open the BED file (handles both .bed and .bed.gz)
     try:
-        # Check if file is gzipped or plain text
         if peaks_file.endswith('.gz'):
             file_handle = gzip.open(peaks_file, 'rt')
         else:
@@ -44,15 +40,13 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
 
         with file_handle as f:
             for i, line in enumerate(f):
-                # Stop when we have enough sequences
+                # Stopping when we have enough sequences
                 if len(sequences) >= max_sequences:
                     break
 
-                # Skip header/comment lines
                 if line.startswith('#') or line.startswith('track') or line.startswith('browser'):
                     continue
 
-                # Parse BED format: chrom start end name score ...
                 parts = line.strip().split('\t')
                 if len(parts) < 3:
                     continue
@@ -61,16 +55,16 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
                 start = int(parts[1])
                 end = int(parts[2])
 
-                # Skip non-standard chromosomes
+                # Skipping non-standard chromosomes
                 if chrom not in [f'chr{i}' for i in range(1, 23)] + ['chrX', 'chrY']:
                     continue
 
-                # Calculate center of peak and extract 200bp window
+                # Calculating center of peak and extract 200bp window
                 center = (start + end) // 2
                 seq_start = max(0, center - 100)  # 100bp on each side = 200bp total
                 seq_end = center + 100
 
-                # Fetch sequence from UCSC Genome Browser API
+                # Fetching sequence from UCSC Genome Browser API
                 try:
                     url = "https://api.genome.ucsc.edu/getData/sequence"
                     params = {
@@ -86,12 +80,11 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
                         data = response.json()
                         seq = data['dna'].upper()
 
-                        # Quality control: only keep valid sequences
+                        # Quality control: only keeping valid sequences
                         if len(seq) == 200 and 'N' not in seq:
                             sequences.append(seq)
                             labels.append(1)  # 1 = binding site
 
-                            # Progress update
                             if len(sequences) % 100 == 0:
                                 print(f"  Loaded {len(sequences)}/{max_sequences} sequences...")
                         else:
@@ -99,7 +92,6 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
                     else:
                         skipped += 1
 
-                    # Be nice to the API (rate limiting)
                     time.sleep(0.15)
 
                 except Exception as e:
@@ -109,23 +101,23 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
                     continue
 
     except FileNotFoundError:
-        print(f"\n❌ ERROR: File not found: {peaks_file}")
+        print(f"\nERROR: File not found: {peaks_file}")
         print("Please download the file first!")
         return [], []
     except Exception as e:
-        print(f"\n❌ ERROR loading file: {e}")
+        print(f"\nERROR loading file: {e}")
         return [], []
 
     print(f"\n✓ Successfully loaded {len(sequences)} positive sequences")
     print(f"  (Skipped {skipped} sequences due to quality control)")
 
-    # Generate negative examples (non-binding sites)
+    # Generating negative examples (non-binding sites)
     print("\nGenerating negative examples...")
     print("  (Random genomic sequences as controls)")
 
     neg_sequences = []
     for i in range(len(sequences)):
-        # Generate random DNA sequence
+        # Generating random DNA sequence
         seq = ''.join(random.choices(['A', 'C', 'G', 'T'], k=200))
         neg_sequences.append(seq)
 
@@ -134,11 +126,11 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
 
     neg_labels = [0] * len(neg_sequences)
 
-    # Combine positive and negative examples
+    # Combining positive and negative examples
     all_sequences = sequences + neg_sequences
     all_labels = labels + neg_labels
 
-    # Shuffle the data
+    # Shuffling the data
     combined = list(zip(all_sequences, all_labels))
     random.shuffle(combined)
     all_sequences, all_labels = zip(*combined)
@@ -157,16 +149,16 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
 
 def load_data(data_path: str = None):
     """
-    Main data loading function.
+    Method that is used for main data loading function.
 
-    Args:
-        data_path: Path to ENCODE peaks file, or None for synthetic data
+    It will take as arguments:
+        data_path: Path to ENCODE peaks file
 
-    Returns:
+    It will return:
         (sequences, labels) tuple
     """
     if data_path is None:
-        # Generate synthetic data for testing
+        # Generating synthetic data for testing
         print("\nGenerating synthetic data for demonstration...")
 
         def generate_random_sequence(length=200):
@@ -182,41 +174,6 @@ def load_data(data_path: str = None):
 
         return sequences, labels
     else:
-        # Load real ENCODE data
+        # Loading real ENCODE data
         return load_encode_peaks(data_path, max_sequences=1000)
-
-
-# ============================================================================
-# EXAMPLE USAGE
-# ============================================================================
-
-if __name__ == "__main__":
-    """
-    Test the data loader with the downloaded ENCODE file.
-    """
-
-    # Path to your downloaded file
-    peaks_file = "./ENCFF308JDD.bed.gz"
-
-    # Load the data
-    sequences, labels = load_encode_peaks(peaks_file, max_sequences=100)
-
-    if sequences:
-        print("\n" + "="*70)
-        print("EXAMPLE SEQUENCES")
-        print("="*70)
-
-        # Show first few sequences
-        for i in range(min(3, len(sequences))):
-            label_str = "BINDING" if labels[i] == 1 else "NO BINDING"
-            print(f"\nSequence {i+1} ({label_str}):")
-            print(f"  {sequences[i][:50]}...{sequences[i][-50:]}")
-            print(f"  Length: {len(sequences[i])} bp")
-
-        print("\n" + "="*70)
-        print("✓ Data loader working correctly!")
-        print("Ready to train your model on real ENCODE data!")
-        print("="*70)
-    else:
-        print("\nFailed to load data. Check file path and try again.")
 
