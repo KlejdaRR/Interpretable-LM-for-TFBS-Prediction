@@ -23,9 +23,9 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
     Returns:
         (sequences, labels) tuple where sequences are DNA strings and labels are 0/1
     """
-    print(f"\n{'=' * 70}")
+    print(f"\n{'='*70}")
     print("LOADING ENCODE CHIP-SEQ DATA")
-    print(f"{'=' * 70}")
+    print(f"{'='*70}")
     print(f"File: {peaks_file}")
     print(f"Target: CTCF transcription factor")
     print(f"Loading up to {max_sequences} peaks...")
@@ -34,9 +34,15 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
     labels = []
     skipped = 0
 
-    # Open the gzipped BED file
+    # Open the BED file (handles both .bed and .bed.gz)
     try:
-        with gzip.open(peaks_file, 'rt') as f:
+        # Check if file is gzipped or plain text
+        if peaks_file.endswith('.gz'):
+            file_handle = gzip.open(peaks_file, 'rt')
+        else:
+            file_handle = open(peaks_file, 'r')
+
+        with file_handle as f:
             for i, line in enumerate(f):
                 # Stop when we have enough sequences
                 if len(sequences) >= max_sequences:
@@ -103,11 +109,11 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
                     continue
 
     except FileNotFoundError:
-        print(f"\n ERROR: File not found: {peaks_file}")
+        print(f"\n❌ ERROR: File not found: {peaks_file}")
         print("Please download the file first!")
         return [], []
     except Exception as e:
-        print(f"\n ERROR loading file: {e}")
+        print(f"\n❌ ERROR loading file: {e}")
         return [], []
 
     print(f"\n✓ Successfully loaded {len(sequences)} positive sequences")
@@ -137,14 +143,14 @@ def load_encode_peaks(peaks_file: str, max_sequences: int = 1000) -> Tuple[List[
     random.shuffle(combined)
     all_sequences, all_labels = zip(*combined)
 
-    print(f"\n{'=' * 70}")
+    print(f"\n{'='*70}")
     print("DATASET SUMMARY")
-    print(f"{'=' * 70}")
+    print(f"{'='*70}")
     print(f"Total sequences: {len(all_sequences)}")
-    print(f"  - Positive (CTCF binding): {len(sequences)} ({len(sequences) / len(all_sequences) * 100:.1f}%)")
-    print(f"  - Negative (no binding):   {len(neg_sequences)} ({len(neg_sequences) / len(all_sequences) * 100:.1f}%)")
+    print(f"  - Positive (CTCF binding): {len(sequences)} ({len(sequences)/len(all_sequences)*100:.1f}%)")
+    print(f"  - Negative (no binding):   {len(neg_sequences)} ({len(neg_sequences)/len(all_sequences)*100:.1f}%)")
     print(f"Sequence length: 200 bp")
-    print(f"{'=' * 70}\n")
+    print(f"{'='*70}\n")
 
     return list(all_sequences), list(all_labels)
 
@@ -178,4 +184,39 @@ def load_data(data_path: str = None):
     else:
         # Load real ENCODE data
         return load_encode_peaks(data_path, max_sequences=1000)
+
+
+# ============================================================================
+# EXAMPLE USAGE
+# ============================================================================
+
+if __name__ == "__main__":
+    """
+    Test the data loader with the downloaded ENCODE file.
+    """
+
+    # Path to your downloaded file
+    peaks_file = "./ENCFF308JDD.bed.gz"
+
+    # Load the data
+    sequences, labels = load_encode_peaks(peaks_file, max_sequences=100)
+
+    if sequences:
+        print("\n" + "="*70)
+        print("EXAMPLE SEQUENCES")
+        print("="*70)
+
+        # Show first few sequences
+        for i in range(min(3, len(sequences))):
+            label_str = "BINDING" if labels[i] == 1 else "NO BINDING"
+            print(f"\nSequence {i+1} ({label_str}):")
+            print(f"  {sequences[i][:50]}...{sequences[i][-50:]}")
+            print(f"  Length: {len(sequences[i])} bp")
+
+        print("\n" + "="*70)
+        print("✓ Data loader working correctly!")
+        print("Ready to train your model on real ENCODE data!")
+        print("="*70)
+    else:
+        print("\nFailed to load data. Check file path and try again.")
 

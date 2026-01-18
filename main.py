@@ -182,7 +182,7 @@ def main():
 
     config = {
         # Data
-        'data_path': None,  # Set to path for real data
+        'data_path': './ENCFF308JDD.bed',
         'max_seq_length': 200,
         'test_split': 0.2,
         'val_split': 0.1,
@@ -396,10 +396,6 @@ def main():
     print(f"\nResults saved in: {config['output_dir']}")
     print("  - best_model.pt: Trained model weights")
     print("  - attention_*.png: Attention visualization plots")
-    print("\nNext steps:")
-    print("  1. Analyze attention patterns for biological insights")
-    print("  2. Compare with known TF binding motifs")
-    print("  3. Test on real ENCODE data")
     print("=" * 70)
 
 
