@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from typing import Dict, List
 import time
+import os
 
 
 class Trainer:
@@ -69,9 +70,10 @@ class Trainer:
             mode='min',  # Minimize validation loss
             factor=0.5,  # Reduce LR by half
             patience=3  # Wait 3 epochs before reducing
+
         )
 
-        # LOSS FUNCTION: Measuring th error
+        # LOSS FUNCTION: Measuring the error
         # BCEWithLogitsLoss = Binary Cross Entropy Loss
         self.criterion = nn.BCEWithLogitsLoss()
 
@@ -203,7 +205,8 @@ class Trainer:
               train_loader: DataLoader,
               val_loader: DataLoader,
               num_epochs: int = 20,
-              early_stopping_patience: int = 5) -> Dict[str, List]:
+              early_stopping_patience: int = 5,
+              save_dir: str = '.') -> Dict[str, List]:
         """
         Method that completes training loop with early stopping.
 
@@ -212,6 +215,7 @@ class Trainer:
             val_loader: DataLoader for validation data
             num_epochs: Maximum number of epochs to train
             early_stopping_patience: Stop if no improvement for this many epochs
+            save_dir: Directory to save the best model (default: current directory)
 
         It will return:
             Training history dictionary
@@ -221,6 +225,11 @@ class Trainer:
         print(f"{'=' * 70}")
         print(f"Training for up to {num_epochs} epochs")
         print(f"Early stopping patience: {early_stopping_patience}")
+
+        # Create save directory if it doesn't exist
+        os.makedirs(save_dir, exist_ok=True)
+        model_save_path = os.path.join(save_dir, 'best_model.pt')
+        print(f"Model will be saved to: {model_save_path}")
 
         best_val_loss = float('inf')
         patience_counter = 0
@@ -265,8 +274,11 @@ class Trainer:
                 patience_counter = 0
 
                 # Save best model
-                torch.save(self.model.state_dict(), '/best_model.pt')
-                print(f"  ✓ New best model saved! (Val Loss: {best_val_loss:.4f})")
+                try:
+                    torch.save(self.model.state_dict(), model_save_path)
+                    print(f"  ✓ New best model saved! (Val Loss: {best_val_loss:.4f})")
+                except Exception as e:
+                    print(f"  ⚠ Warning: Could not save model: {e}")
             else:
                 # No improvement
                 patience_counter += 1
@@ -287,9 +299,15 @@ class Trainer:
         print(f"Best validation loss: {best_val_loss:.4f}")
 
         # Load best model
-        print("\nLoading best model...")
-        self.model.load_state_dict(torch.load('/home/claude/best_model.pt'))
+        if os.path.exists(model_save_path):
+            print(f"\nLoading best model from {model_save_path}...")
+            try:
+                self.model.load_state_dict(torch.load(model_save_path))
+                print("Best model loaded successfully")
+            except Exception as e:
+                print(f"Warning: Could not load best model: {e}")
+        else:
+            print(f"\nWarning: Best model file not found at {model_save_path}")
 
         return self.history
-
 

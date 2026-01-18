@@ -13,6 +13,7 @@ the model is "looking at" when making predictions.
 import torch
 import numpy as np
 from typing import Dict, List, Tuple
+import os
 import matplotlib
 
 matplotlib.use('Agg')  # Use non-interactive backend
@@ -39,7 +40,7 @@ class AttentionVisualizer:
 
         It will take as arguments:
             model: The trained transformer model
-            vocabulary: SimpleDNAVocabulary instance for decoding
+            vocabulary: DNAVocabulary instance for decoding
         """
         self.model = model
         self.vocabulary = vocabulary
@@ -129,11 +130,16 @@ class AttentionVisualizer:
             save_path: Where to save the plot
             show_sequence: Whether to show k-mer labels
 
-        It will return :
+        It will return:
             Path to saved figure
         """
         if save_path is None:
-            save_path = '/home/claude/attention_heatmap.png'
+            save_path = os.path.join('.', 'attention_heatmap.png')
+
+        # Ensure directory exists
+        save_dir = os.path.dirname(save_path)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir, exist_ok=True)
 
         attention = attention_data['attention_weights']
         sequence = attention_data['sequence']
@@ -191,7 +197,12 @@ class AttentionVisualizer:
             Path to saved figure
         """
         if save_path is None:
-            save_path = '/home/claude/sequence_importance.png'
+            save_path = os.path.join('.', 'sequence_importance.png')
+
+        # Ensure directory exists
+        save_dir = os.path.dirname(save_path)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir, exist_ok=True)
 
         attention = attention_data['attention_weights']
         sequence = attention_data['sequence']

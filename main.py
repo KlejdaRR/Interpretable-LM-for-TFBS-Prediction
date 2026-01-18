@@ -10,9 +10,10 @@ Usage:
 """
 
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 import numpy as np
 import random
+import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from DNAVocabulary import DNAVocabulary
 from TFBSDataset import TFBSDataset
@@ -156,9 +157,7 @@ def main():
     2. Create vocabulary
     3. Create datasets and dataloaders
     4. Train transformer model
-    5. Train baseline models
-    6. Compare performance
-    7. Visualize attention (interpretability)
+    5. Visualize attention (interpretability)
     """
 
     print("\n" + "=" * 70)
@@ -188,6 +187,9 @@ def main():
         'num_epochs': 20,
         'early_stopping_patience': 5,
 
+        # Paths
+        'output_dir': './outputs',  # Directory for saving results
+
         # Other
         'random_seed': 42,
         'device': 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -196,6 +198,10 @@ def main():
     print("\nConfiguration:")
     for key, value in config.items():
         print(f"  {key}: {value}")
+
+    # Create output directory
+    os.makedirs(config['output_dir'], exist_ok=True)
+    print(f"\nOutput directory created: {config['output_dir']}")
 
     # STEP 1: Set random seed
     set_random_seed(config['random_seed'])
@@ -315,10 +321,14 @@ def main():
         train_loader=train_loader,
         val_loader=val_loader,
         num_epochs=config['num_epochs'],
-        early_stopping_patience=config['early_stopping_patience']
+        early_stopping_patience=config['early_stopping_patience'],
+        save_dir=config['output_dir']  # Pass the output directory
     )
 
     # Evaluate
+    print("\n" + "-" * 70)
+    print("Evaluating on test set...")
+    print("-" * 70)
     transformer_metrics = evaluate_model(
         transformer_model,
         test_loader,
@@ -326,12 +336,7 @@ def main():
     )
     print_metrics(transformer_metrics, "Transformer Model")
 
-    # STEP 8: Train baseline models for comparison
-    print("\n" + "-" * 70)
-    print("Training baseline models for comparison...")
-    print("-" * 70)
-
-    # STEP 9: Attention visualization (interpretability)
+    # STEP 8: Attention visualization (interpretability)
     print("\n" + "=" * 70)
     print("INTERPRETABILITY: Attention Visualization")
     print("=" * 70)
@@ -351,14 +356,17 @@ def main():
         attention_data = visualizer.get_attention_weights(seq)
         print(f"  Prediction: {attention_data['prediction']:.3f}")
 
-        # Create visualizations
+        # Create visualizations with correct paths
+        heatmap_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_heatmap.png')
+        importance_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_importance.png')
+
         visualizer.plot_attention_heatmap(
             attention_data,
-            save_path=f'/home/claude/attention_example_{i + 1}_heatmap.png'
+            save_path=heatmap_path
         )
         visualizer.plot_sequence_importance(
             attention_data,
-            save_path=f'/home/claude/attention_example_{i + 1}_importance.png'
+            save_path=importance_path
         )
 
         # Find important regions
@@ -366,16 +374,13 @@ def main():
         if regions:
             print(f"  Important regions: {regions}")
 
+    # STEP 9: Save final summary
     print("\n" + "=" * 70)
     print("PIPELINE COMPLETE!")
     print("=" * 70)
-    print("\nResults saved:")
-    print("  - Best model: /home/claude/best_model.pt")
-    print("  - Attention visualizations: /home/claude/attention_*.png")
-    print("\nNext steps:")
-    print("  1. Analyze attention patterns for biological insights")
-    print("  2. Compare with known TF binding motifs")
-    print("  3. Test on real ENCODE data")
+    print(f"\nResults saved in: {config['output_dir']}")
+    print("  - best_model.pt: Trained model weights")
+    print("  - attention_*.png: Attention visualization plots")
     print("=" * 70)
 
 
