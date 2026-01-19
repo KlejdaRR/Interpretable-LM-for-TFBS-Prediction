@@ -1,22 +1,18 @@
 # DNA-LM: Interpretable Transformer for TFBS Prediction
-## 🎯 Project Overview
 
 **Full Title**: DNA-LM: An Interpretable Language Model for Transcription Factor Binding Site Prediction Using Self-Attention Mechanisms
 
 **One-Line Summary**: Application of transformer-based NLP techniques to genomic sequences for interpretable prediction of transcription factor binding sites with 97.8% accuracy.
 
 **Courses Integrated**:
-- 🧬 **Bioinformatics**: ChIP-seq data analysis, regulatory genomics, motif discovery
-- 🤖 **Advanced Machine Learning**: Transformer architecture, attention mechanisms, deep learning optimization
-- 📝 **Language Processing Technologies**: DNA tokenization, sequence modeling, NLP paradigms for genomics
-
-**Authors**: Klejda Rrapaj
+- **Bioinformatics**: ChIP-seq data analysis, regulatory genomics, motif discovery
+- **Advanced Machine Learning**: Transformer architecture, attention mechanisms, deep learning optimization
 
 **Date**: January 2026
 
 ---
 
-## 📁 Complete Project Structure
+## Complete Project Structure
 
 ```
 Interpretable-LM-for-TFBS-Prediction/
