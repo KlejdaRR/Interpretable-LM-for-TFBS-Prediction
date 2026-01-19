@@ -19,17 +19,36 @@
 ## 📁 Complete Project Structure
 
 ```
-DNA-LM-TFBS-Prediction/
+Interpretable-LM-for-TFBS-Prediction/
 │
-├── Core Implementation Files
-│   ├── main.py                          # Main training pipeline
-│   ├── DNAVocabulary.py                 # K-mer tokenization (4099 tokens)
-│   ├── TFBSDataset.py                   # PyTorch Dataset with data augmentation
-│   ├── TransformerModel.py              # Standard transformer architecture
-│   ├── Trainer.py                       # Training loop with early stopping
-│   ├── AttentionVisualizer.py           # Interpretability visualizations
-│   ├── PositionalEncoding.py            # Sinusoidal position encoding
-│   └── encode_data_loader.py            # ENCODE ChIP-seq data loader
+├── models/                          # Model architectures
+│   ├── __init__.py
+│   ├── TransformerModel.py         ← Main model
+│   └── PositionalEncoding.py       ← Model component
+│
+├── data/                            # Data processing
+│   ├── __init__.py
+│   ├── DNAVocabulary.py            ← Tokenization
+│   ├── TFBSDataset.py              ← PyTorch Dataset
+│   └── encode_data_loader.py       ← Data loading
+│
+├── training/                        # Training logic
+│   ├── __init__.py
+│   └── Trainer.py                  ← Training loop
+│
+├── visualization/                   # Analysis & visualization
+│   ├── __init__.py
+│   └── AttentionVisualizer.py      ← Attention plots
+│
+├── data_files/                      # Raw data
+│   └── ENCFF308JDD.bed             ← ENCODE data
+│
+├── outputs/                         # Results
+│   ├── best_model.pt
+│   └── attention_*.png
+│
+├── main.py                          # Main script
+└── README.md                        # Documentation
 ```
 
 ### Model Architecture
