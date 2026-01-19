@@ -239,7 +239,7 @@ class AttentionVisualizer:
         """
 
         if save_path is None:
-            save_path = os.path.join('.', 'attention_heatmap.png')
+            save_path = os.path.join('..', 'attention_heatmap.png')
 
         save_dir = os.path.dirname(save_path)
         if save_dir and not os.path.exists(save_dir):
@@ -297,7 +297,7 @@ class AttentionVisualizer:
         String: Path where the figure was saved
         """
         if save_path is None:
-            save_path = os.path.join('.', 'sequence_importance.png')
+            save_path = os.path.join('..', 'sequence_importance.png')
 
         save_dir = os.path.dirname(save_path)
         if save_dir and not os.path.exists(save_dir):

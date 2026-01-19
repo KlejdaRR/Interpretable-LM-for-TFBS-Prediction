@@ -15,15 +15,15 @@ import numpy as np
 import random
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-from DNAVocabulary import DNAVocabulary
-from TFBSDataset import TFBSDataset
-from TransformerModel import TransformerModel
-from Trainer import Trainer
-from AttentionVisualizer import AttentionVisualizer
+from data.DNAVocabulary import DNAVocabulary
+from data.TFBSDataset import TFBSDataset
+from models.TransformerModel import TransformerModel
+from training.Trainer import Trainer
+from visualization.AttentionVisualizer import AttentionVisualizer
 
 # Importing ENCODE data loader
 try:
-    from encode_data_loader import load_encode_peaks
+    from data.encode_data_loader import load_encode_peaks
 except ImportError:
     load_encode_peaks = None
     print("Note: encode_data_loader.py not found. Only synthetic data will be available.")
