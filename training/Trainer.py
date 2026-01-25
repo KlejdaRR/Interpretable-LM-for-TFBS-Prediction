@@ -19,12 +19,6 @@ import os
 class Trainer:
     """
     A trainer class that handles the training process.
-
-    During training
-    1. Show model some data (forward pass)
-    2. Calculate how wrong it was (compute loss)
-    3. Update model weights to do better (backward pass)
-    4. Repeat many times
     """
 
     def __init__(self,
@@ -154,7 +148,6 @@ class Trainer:
     def validate(self, dataloader: DataLoader) -> Dict[str, float]:
         """
         Method that evaluates the model on validation data.
-
         This tells us how well the model generalizes to new data.
 
         It will take as arguments:
@@ -271,9 +264,9 @@ class Trainer:
                 # Saving best model
                 try:
                     torch.save(self.model.state_dict(), model_save_path)
-                    print(f"  ✓ New best model saved! (Val Loss: {best_val_loss:.4f})")
+                    print(f"  New best model saved! (Val Loss: {best_val_loss:.4f})")
                 except Exception as e:
-                    print(f"  ⚠ Warning: Could not save model: {e}")
+                    print(f"  Warning: Could not save model: {e}")
             else:
                 # No improvement
                 patience_counter += 1

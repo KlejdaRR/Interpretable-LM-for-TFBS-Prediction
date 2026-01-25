@@ -6,7 +6,6 @@ Usage:
 1. Preparing data (sequences and labels)
 2. Configuring parameters below
 3. Run: python main.py
-
 """
 
 import torch
@@ -65,10 +64,8 @@ def load_data(data_path: str = None):
         print("\nGenerating synthetic data for demonstration...")
 
         def generate_random_sequence(length=200):
-            # Generating a random DNA sequence.
             return ''.join(random.choices(['A', 'C', 'G', 'T'], k=length))
 
-        # Generating balanced dataset
         n_samples = 1000
         sequences = [generate_random_sequence() for _ in range(n_samples)]
         labels = [random.randint(0, 1) for _ in range(n_samples)]
@@ -84,11 +81,11 @@ def load_data(data_path: str = None):
             sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
 
             if not sequences:
-                print("\n⚠️  Failed to load ENCODE data. Falling back to synthetic data.")
-                return load_data(None)  # Fall back to synthetic
+                print("\n Failed to load ENCODE data. Falling back to synthetic data.")
+                return load_data(None)
         else:
-            print("\n⚠️  encode_data_loader.py not found. Using synthetic data.")
-            return load_data(None)  # Fall back to synthetic
+            print("\n encode_data_loader.py not found. Using synthetic data.")
+            return load_data(None)
 
     return sequences, labels
 
@@ -200,9 +197,8 @@ def main():
         'early_stopping_patience': 5,
 
         # Paths
-        'output_dir': './outputs',  # Directory for saving results
+        'output_dir': './outputs',
 
-        # Other
         'random_seed': 42,
         'device': 'cuda' if torch.cuda.is_available() else 'cpu'
     }
@@ -211,7 +207,6 @@ def main():
     for key, value in config.items():
         print(f"  {key}: {value}")
 
-    # Creating output directory
     os.makedirs(config['output_dir'], exist_ok=True)
     print(f"\nOutput directory created: {config['output_dir']}")
 
@@ -264,58 +259,27 @@ def main():
     print("Creating datasets...")
     print("-" * 70)
 
-    train_dataset = TFBSDataset(
-        sequences=train_sequences,
-        labels=train_labels,
-        vocabulary=vocabulary,
-        max_length=config['max_seq_length'],
+    train_dataset = TFBSDataset(sequences=train_sequences, labels=train_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
         use_augmentation=True
     )
-
-    val_dataset = TFBSDataset(
-        sequences=val_sequences,
-        labels=val_labels,
-        vocabulary=vocabulary,
-        max_length=config['max_seq_length'],
+    val_dataset = TFBSDataset(sequences=val_sequences, labels=val_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
         use_augmentation=False
     )
-
-    test_dataset = TFBSDataset(
-        sequences=test_sequences,
-        labels=test_labels,
-        vocabulary=vocabulary,
-        max_length=config['max_seq_length'],
+    test_dataset = TFBSDataset(sequences=test_sequences, labels=test_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
         use_augmentation=False
     )
 
     # STEP 6: Creating data loaders
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=config['batch_size'],
-        shuffle=True,
-        num_workers=0
-    )
-
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=config['batch_size'],
-        shuffle=False
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=config['batch_size'],
-        shuffle=False
-    )
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
 
     # STEP 7: Creating and train transformer model
     print("\n" + "-" * 70)
     print("Creating Transformer model...")
     print("-" * 70)
 
-    transformer_model = TransformerModel(
-        vocab_size=vocabulary.vocab_size,
-        d_model=config['d_model'],
+    transformer_model = TransformerModel(vocab_size=vocabulary.vocab_size, d_model=config['d_model'],
         nhead=config['nhead'],
         num_layers=config['num_layers'],
         dropout=config['dropout'],
@@ -323,12 +287,7 @@ def main():
     )
 
     # Training
-    trainer = Trainer(
-        model=transformer_model,
-        device=config['device'],
-        learning_rate=config['learning_rate']
-    )
-
+    trainer = Trainer(model=transformer_model, device=config['device'], learning_rate=config['learning_rate'])
     history = trainer.train(
         train_loader=train_loader,
         val_loader=val_loader,
@@ -336,7 +295,6 @@ def main():
         early_stopping_patience=config['early_stopping_patience'],
         save_dir=config['output_dir']  # Pass the output directory
     )
-
     # Evaluating
     print("\n" + "-" * 70)
     print("Evaluating on test set...")
@@ -372,14 +330,8 @@ def main():
         heatmap_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_heatmap.png')
         importance_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_importance.png')
 
-        visualizer.plot_attention_heatmap(
-            attention_data,
-            save_path=heatmap_path
-        )
-        visualizer.plot_sequence_importance(
-            attention_data,
-            save_path=importance_path
-        )
+        visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
+        visualizer.plot_sequence_importance(attention_data, save_path=importance_path)
 
         # Finding important regions
         regions = visualizer.find_important_regions(attention_data)

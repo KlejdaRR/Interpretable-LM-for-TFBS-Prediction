@@ -102,9 +102,6 @@ class TFBSDataset(Dataset):
         """
         Constructor method that will get a single item from the dataset.
 
-        This will be called when you do: dataset[0], dataset[1], etc.
-        PyTorch's DataLoader uses this to create batches.
-
         It will take as arguments:
             idx: Index of the item to retrieve
 
@@ -114,7 +111,6 @@ class TFBSDataset(Dataset):
                 - 'label': Binding label (0 or 1)
                 - 'sequence': Original DNA sequence (for debugging)
         """
-        # Getting the sequence and label
         sequence = self.sequences[idx]
         label = self.labels[idx]
 
@@ -130,5 +126,5 @@ class TFBSDataset(Dataset):
         return {
             'input_ids': torch.tensor(encoded_sequence, dtype=torch.long),
             'label': torch.tensor(label, dtype=torch.float),
-            'sequence': sequence  # Keep for debugging/visualization
+            'sequence': sequence
         }

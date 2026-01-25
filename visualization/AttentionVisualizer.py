@@ -2,13 +2,6 @@
 Attention Visualization for Interpretability
 This file helps VISUALIZE what our AI model is "looking at" when it makes predictions.
 
-In simple terms:
-- When we read a sentence, some words are more important than others
-- When our model reads DNA, some positions are more important than others
-- This file creates pictures (graphs) to show which DNA positions are most important
-
-It is needed because:
-Without visualization, our model is a "black box" - we can't see why it makes predictions.
 With visualization, we can:
 1. See which DNA positions the model focuses on
 2. Check if the model learned real biology (not just memorizing)
@@ -49,7 +42,6 @@ class AttentionVisualizer:
         What will happen:
         We will save the model and vocabulary so we can use them later.
         """
-        # Storing the model and vocabulary as instance variables
         self.model = model
         self.vocabulary = vocabulary
 
@@ -167,8 +159,6 @@ class AttentionVisualizer:
         Pos 4 [0.02   0.03   0.1    0.2    0.65]
         (attending FROM)
 
-        Notice: Each row sums to 1.0 (because attention is a probability distribution)
-
         Parameters that are used:
         - seq_length: How many positions in the sequence
 
@@ -177,39 +167,22 @@ class AttentionVisualizer:
         """
 
         # STEP 1: Creating a matrix filled with random numbers between 0 and 1
-        # Shape: (seq_length, seq_length)
-        # np.random.rand() generates random numbers uniformly between 0 and 1
         attention = np.random.rand(seq_length, seq_length)
 
         # STEP 2: Making it look more realistic
-        # Real attention has patterns:
-        # - Higher attention to nearby positions (local context)
-        # - Some attention to distant positions (long-range dependencies)
 
         # Loop through every pair of positions (i, j)
         for i in range(seq_length):
             for j in range(seq_length):
                 # Calculating how far apart positions i and j are
-                # abs() gives absolute value (always positive)
                 distance = abs(i - j)
 
-                # Nearby positions: boost attention by 0.5
-                # This simulates the model looking at local motifs
                 if distance < 5:
                     attention[i, j] += 0.5
-                # Medium-distance positions: boost by 0.2
                 elif distance < 10:
                     attention[i, j] += 0.2
-                # Far positions: keep the random value (small attention)
 
         # STEP 3: Normalizing rows to sum to 1
-        # This makes each row a proper probability distribution
-        #
-        # Why? In real attention, for each position i, the attention weights
-        # across all positions j must sum to 1.0 (it's a weighted average)
-        #
-        # axis=1 means "sum across columns for each row"
-        # keepdims=True keeps it as a column vector for broadcasting
         attention = attention / attention.sum(axis=1, keepdims=True)
 
         return attention
@@ -353,33 +326,10 @@ class AttentionVisualizer:
         """
         Identifying regions of high attention (potential binding motifs).
 
-        This method finds continuous stretches of high-importance positions.
-        These might be binding motifs or other biologically important regions.
-
         The process:
         1. Calculate importance for each position
         2. Find positions above a threshold (default: top 30%)
         3. Group consecutive high-importance positions into regions
-
-        Example:
-        Imagine importance scores:
-        Position:    0    1    2    3    4    5    6    7    8    9
-        Importance: 0.2  0.3  0.8  0.9  0.7  0.3  0.2  0.8  0.9  0.85
-
-        If threshold = 0.7 (70th percentile), we mark positions ≥ 0.7:
-        Position:    0    1    2    3    4    5    6    7    8    9
-        Important:   No   No  YES  YES  YES   No   No  YES  YES  YES
-
-        Group consecutive positions:
-        - Region 1: positions 2-4 (continuous high importance)
-        - Region 2: positions 7-9 (continuous high importance)
-
-        Return: [(2, 4), (7, 9)]
-
-        It is useful because:
-        - Potential CTCF binding motifs (6-15 bp)
-        - Regulatory elements
-        - Structural features
 
         Parameters used:
         - attention_data: Dictionary from get_attention_weights()
@@ -391,13 +341,6 @@ class AttentionVisualizer:
         List of tuples: [(start1, end1), (start2, end2), ...]
         Each tuple is one region: (start_position, end_position)
         Positions are inclusive: (2, 4) means positions 2, 3, and 4
-
-        For example:
-        attention_data = visualizer.get_attention_weights("ATCGATCG...")
-        regions = visualizer.find_important_regions(attention_data, threshold=0.8)
-        print(f"Found {len(regions)} important regions:")
-        for start, end in regions:
-            print(f"  Region: positions {start} to {end}")
         """
 
         # STEP 1: Extracting attention matrix and calculate importance
@@ -408,39 +351,23 @@ class AttentionVisualizer:
         importance = attention.mean(axis=0)
 
         # STEP 2: Calculating the threshold value
-        # np.percentile() finds the value at a given percentile
-        # Example: If threshold=0.7, this finds the 70th percentile value
-        #          Meaning: 70% of values are below this, 30% are above
         threshold_value = np.percentile(importance, threshold * 100)
 
         # STEP 3: Finding all positions above the threshold
-        # np.where() returns indices where condition is True
-        # Example: importance = [0.2, 0.8, 0.9, 0.3]
-        #          threshold_value = 0.7
-        #          Returns: [1, 2] (positions with 0.8 and 0.9)
         important_positions = np.where(importance >= threshold_value)[0]
 
         # STEP 4: Grouping consecutive positions into regions
-        # We need to find "runs" of consecutive numbers
-        # Example: [1, 2, 3, 7, 8, 9] → regions: (1,3) and (7,9)
-
         regions = []  # Listing to store our regions
 
         # Only proceeding if we found any important positions
         if len(important_positions) > 0:
-            # Starting the first region
-            start = important_positions[0]  # First important position
-            prev = important_positions[0]  # Keep track of previous position
+            start = important_positions[0]
+            prev = important_positions[0]
 
             # Loop through remaining important positions
             for pos in important_positions[1:]:
-                # Checking if there's a gap
-                # If current position > previous position + 1, there's a gap
-                # Example: prev=3, pos=5 → gap! (missing position 4)
                 if pos > prev + 1:
-                    # Gap found! Closing the current region
                     regions.append((start, prev))
-                    # Starting a new region
                     start = pos
 
                 # Updating previous position
