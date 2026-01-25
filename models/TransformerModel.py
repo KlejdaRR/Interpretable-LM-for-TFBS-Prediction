@@ -31,7 +31,7 @@ Why Transformers for DNA?
 
 import torch.nn as nn
 import math
-from PositionalEncoding import PositionalEncoding
+from models.PositionalEncoding import PositionalEncoding
 
 
 class TransformerModel(nn.Module):
