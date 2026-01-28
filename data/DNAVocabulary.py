@@ -31,14 +31,6 @@ class DNAVocabulary:
     What does this class do?
     It creates a "dictionary" that maps DNA k-mers to numbers.
     For example: "AAA" -> 0, "AAC" -> 1, "AAG" -> 2, etc.
-
-    Analogy
-    - English dictionary: Maps words to definitions
-    - DNA vocabulary: Maps k-mers to ID numbers
-
-    Why do we need this?
-    The transformer model can only process numbers, not letters.
-    This class is the translator between DNA (ATCG) and numbers (0, 1, 2, 3...).
     """
 
     def __init__(self, k: int = 6):

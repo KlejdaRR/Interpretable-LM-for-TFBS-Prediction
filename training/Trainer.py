@@ -32,8 +32,6 @@ class Trainer:
             model: The neural network to train
             device: 'cuda' for GPU or 'cpu' for CPU
             learning_rate: How big the update steps should be
-                          - Too large: training unstable, might diverge
-                          - Too small: training very slow
                           - 1e-4 (0.0001) is a good default
         """
         if device is None:
@@ -104,6 +102,9 @@ class Trainer:
             labels = batch['label'].to(self.device)
 
             # STEP 2: Forward pass - getting model predictions
+            # Using squeeze here because Classifier outputs shape [batch_size, 1] (2D)
+            # and BCEWithLogitsLoss expects shape [batch_size] (1D)
+            # so squeeze safely removes the unnecessary dimension of size 1
             predictions = self.model(input_ids).squeeze()
 
             # STEP 3: Calculating loss

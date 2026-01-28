@@ -220,7 +220,7 @@ def main():
     print("\n" + "-" * 70)
     print("Creating DNA vocabulary...")
     print("-" * 70)
-    vocabulary = DNAVocabulary(k=config['k'])
+    vocabulary = DNAVocabulary(6)
 
     # STEP 4: Splitting data (train/val/test)
     print("\n" + "-" * 70)
@@ -288,6 +288,7 @@ def main():
 
     # Training
     trainer = Trainer(model=transformer_model, device=config['device'], learning_rate=config['learning_rate'])
+
     history = trainer.train(
         train_loader=train_loader,
         val_loader=val_loader,

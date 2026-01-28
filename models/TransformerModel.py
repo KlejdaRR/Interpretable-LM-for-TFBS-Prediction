@@ -52,7 +52,6 @@ class TransformerModel(nn.Module):
        Output: [[0.1, -0.3, ...], [0.5, 0.2, ...], ...]  (vectors)
 
     2. Positional Encoding: Adds position information
-       Tells the model "this vector is at position 1, that one at position 2"
 
     3. Transformer Encoder: Learns patterns using attention
        Each position looks at other positions and decides what's important
@@ -78,9 +77,6 @@ class TransformerModel(nn.Module):
                  max_seq_length: int = 200):
         """
         Initializing the transformer model.
-
-        What happens here:
-        We're building the model architecture - creating all the layers and components.
 
         Parameters explained:
             vocab_size: Size of the vocabulary (number of unique tokens)
