@@ -283,6 +283,7 @@ class TransformerModel(nn.Module):
         predictions = self.classifier(cls_output)
 
         if return_attention:
-            return predictions, None
+            attention_weights = self.get_real_attention()
+            return predictions, attention_weights
 
         return predictions
