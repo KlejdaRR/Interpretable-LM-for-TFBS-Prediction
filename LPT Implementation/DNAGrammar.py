@@ -1,0 +1,375 @@
+"""
+DNA Context-Free Grammar
+
+This module implements a context-free grammar (CFG) for modeling DNA regulatory regions.
+This demonstrates the next level in the Chomsky hierarchy after regular expressions.
+
+What is a Context-Free Grammar?
+A CFG is a set of recursive rules that can generate and parse nested structures.
+Example: S → aSb | ε generates strings like "ab", "aabb", "aaabbb"
+
+Why CFG for DNA?
+Regulatory regions have hierarchical structure:
+- Promoter contains: TATA-box + CAAT-box + Transcription Start Site
+- Enhancer contains: Multiple transcription factor binding sites
+- Gene contains: Promoter + Exons + Introns
+
+Regular expressions cannot capture this nested, hierarchical organization.
+
+Connection to Language Processing Technologies course:
+- Context-free grammars and pushdown automata
+- Parsing algorithms
+- Chomsky hierarchy (Type 2 languages)
+- Lark parser generator (similar to ANTLR, Yacc)
+"""
+
+from lark import Lark, Transformer, Tree
+from typing import Dict, List, Optional
+
+
+class DNAGrammar:
+    """
+    A context-free grammar for DNA regulatory regions.
+
+    This demonstrates how CFGs can model the hierarchical structure of
+    genomic elements - something regex cannot do.
+    """
+
+    def __init__(self):
+        """
+        Initializing the DNA grammar using Lark parser generator.
+
+        The grammar defines the structure of regulatory regions:
+        - regulatory_region: The top-level structure
+        - promoter: Contains core promoter elements
+        - enhancer: Contains TF binding sites
+        - motif: Individual binding sites
+        - sequence: Raw DNA sequence
+        """
+
+        # Grammar definition - Minimal but demonstrates CFG concepts
+        # This shows hierarchical structure that regex cannot express
+        self.grammar_definition = r"""
+            // A regulatory region is either a promoter or an enhancer
+            regulatory_region: promoter | enhancer
+
+            // Promoter: TATA-box, optional elements, then TSS
+            // This shows hierarchical composition: promoter CONTAINS elements
+            promoter: "TATA" elements "TSS"
+
+            // Elements: can have multiple components
+            // This demonstrates nested structure
+            elements: element*
+
+            element: "CAAT" | "GC" | "SPACER"
+
+            // Enhancer: Multiple TFBS (at least 2)
+            // Different structure from promoter
+            enhancer: tfbs tfbs tfbs*
+
+            tfbs: "CTCF" | "EBOX"
+
+            %import common.WS
+            %ignore WS
+        """
+
+        # Creating the parser
+        # Lark will build a pushdown automaton from our grammar
+        self.parser = Lark(
+            self.grammar_definition,
+            start='regulatory_region',  # Starting symbol
+            parser='lalr',  # LALR parsing algorithm (efficient)
+            keep_all_tokens=True  # Keep all tokens for analysis
+        )
+
+        print("DNA Context-Free Grammar initialized")
+        print("  - Grammar type: Type 2 (Context-Free)")
+        print("  - Parser algorithm: LALR")
+        print("  - Structures: Promoter, Enhancer, TFBS")
+
+    def parse(self, sequence_structure: str) -> Optional[Tree]:
+        """
+        Parsing a DNA structure description into a parse tree.
+
+        This demonstrates how CFGs can recognize hierarchical structure.
+
+        Parameters:
+            sequence_structure: String describing regulatory region structure
+                              Example: "TATAWAW SPACER GGYCAATCT SPACER TSS"
+
+        Returns:
+            Parse tree if valid, None if parsing fails
+
+        Example:
+            Input:  "TATAWAW ATCG GGYCAATCT GCGC TSS"
+            Output: Tree showing hierarchical structure:
+                    regulatory_region
+                    └── promoter
+                        ├── tata_box
+                        ├── spacer
+                        ├── caat_box
+                        ├── spacer
+                        └── tss
+        """
+        try:
+            tree = self.parser.parse(sequence_structure)
+            return tree
+        except Exception as e:
+            print(f"Parsing failed: {e}")
+            return None
+
+    def validate_structure(self, sequence_structure: str) -> bool:
+        """
+        Validating whether a sequence matches the regulatory region grammar.
+
+        This is what CFGs excel at: recognizing valid structures.
+
+        Parameters:
+            sequence_structure: Structure to validate
+
+        Returns:
+            True if valid according to grammar, False otherwise
+        """
+        tree = self.parse(sequence_structure)
+        return tree is not None
+
+    def analyze_structure(self, sequence_structure: str, verbose: bool = True) -> Dict:
+        """
+        Analyzing the hierarchical structure of a regulatory region.
+
+        This demonstrates the power of CFGs over regex:
+        - CFGs can recognize nested structures
+        - CFGs can enforce ordering rules
+        - CFGs can model composition (promoter contains elements)
+
+        Parameters:
+            sequence_structure: Structure string to analyze
+            verbose: Whether to print detailed analysis
+
+        Returns:
+            Dictionary with structural analysis
+        """
+        tree = self.parse(sequence_structure)
+
+        if tree is None:
+            return {
+                'valid': False,
+                'error': 'Failed to parse - structure does not match grammar'
+            }
+
+        # Analyzing the parse tree
+        analysis = {
+            'valid': True,
+            'type': None,
+            'components': [],
+            'has_promoter': False,
+            'has_enhancer': False,
+            'promoter_elements': [],
+            'tfbs_count': 0
+        }
+
+        # Walking the tree to extract information
+        for child in tree.children:
+            if hasattr(child, 'data'):
+                if child.data == 'promoter':
+                    analysis['has_promoter'] = True
+                    analysis['type'] = 'promoter' if not analysis['has_enhancer'] else 'promoter+enhancer'
+
+                    # Extracting promoter elements
+                    for element in child.children:
+                        if hasattr(element, 'data'):
+                            elem_type = element.data
+                            if elem_type in ['tata_box', 'caat_box', 'gc_box', 'tss']:
+                                analysis['promoter_elements'].append(elem_type)
+
+                elif child.data == 'enhancer':
+                    analysis['has_enhancer'] = True
+                    analysis['type'] = 'enhancer' if not analysis['has_promoter'] else 'promoter+enhancer'
+
+                    # Counting TFBS in enhancer
+                    analysis['tfbs_count'] = self._count_tfbs(child)
+
+        if verbose:
+            self._print_analysis(analysis, tree)
+
+        return analysis
+
+    def _count_tfbs(self, enhancer_node) -> int:
+        """Counting transcription factor binding sites in enhancer"""
+        count = 0
+        for child in enhancer_node.iter_subtrees():
+            if hasattr(child, 'data') and child.data == 'tfbs':
+                count += 1
+        return count
+
+    def _print_analysis(self, analysis: Dict, tree: Tree):
+        """Printing detailed structural analysis"""
+        print(f"\n{'=' * 70}")
+        print("CFG STRUCTURAL ANALYSIS")
+        print(f"{'=' * 70}")
+        print(f"Valid structure: {analysis['valid']}")
+        print(f"Type: {analysis['type']}")
+        print()
+
+        if analysis['has_promoter']:
+            print("PROMOTER DETECTED:")
+            print(f"  Elements found: {', '.join(analysis['promoter_elements'])}")
+            print()
+
+        if analysis['has_enhancer']:
+            print("ENHANCER DETECTED:")
+            print(f"  Number of TFBS: {analysis['tfbs_count']}")
+            print()
+
+        print("PARSE TREE:")
+        print(tree.pretty())
+        print(f"{'=' * 70}\n")
+
+    def demonstrate_hierarchy(self):
+        """
+        Demonstrating how CFG captures hierarchical structure.
+
+        This shows what CFGs can do that regex cannot:
+        - Nested structures
+        - Compositional rules (promoter is made of parts)
+        - Structural validation
+        """
+        print(f"\n{'=' * 70}")
+        print("CFG vs REGEX: HIERARCHICAL STRUCTURE")
+        print(f"{'=' * 70}\n")
+
+        print("REGEX LIMITATION:")
+        print("  Can find: TATA-box pattern")
+        print("  Cannot: Recognize that TATA-box is PART OF a promoter")
+        print("  Cannot: Enforce promoter structure (elements in correct order)")
+        print()
+
+        print("CFG CAPABILITY:")
+        print("  Can recognize: Hierarchical composition")
+        print("  Can enforce: Structural rules (promoter → elements → TSS)")
+        print("  Can validate: Whether a region matches regulatory structure")
+        print()
+
+        print("EXAMPLE STRUCTURES:")
+        print("-" * 70)
+
+        examples = [
+            ("Valid Promoter", "TATA SPACER CAAT SPACER TSS"),
+            ("Valid Enhancer", "CTCF EBOX CTCF"),
+            ("Complex Promoter", "TATA SPACER CAAT SPACER GC SPACER TSS"),
+        ]
+
+        for name, structure in examples:
+            print(f"\n{name}:")
+            print(f"  Structure: {structure}")
+            is_valid = self.validate_structure(structure)
+            print(f"  Valid: {is_valid}")
+
+            if is_valid:
+                self.analyze_structure(structure, verbose=False)
+
+
+class RegionClassifier(Transformer):
+    """
+    A Lark Transformer that classifies regulatory regions.
+
+    This demonstrates how CFG parse trees can be transformed into
+    structured data for downstream analysis.
+    """
+
+    def regulatory_region(self, items):
+        """Transforming regulatory_region rule"""
+        return {
+            'type': 'regulatory_region',
+            'components': items
+        }
+
+    def promoter(self, items):
+        """Transforming promoter rule"""
+        elements = [item for item in items if item is not None]
+        return {
+            'type': 'promoter',
+            'elements': elements
+        }
+
+    def enhancer(self, items):
+        """Transforming enhancer rule"""
+        return {
+            'type': 'enhancer',
+            'tfbs_sites': items
+        }
+
+
+def compare_regex_cfg_transformer():
+    """
+    Comparing all three approaches to demonstrate the progression.
+
+    This is the key pedagogical point of your project:
+    1. Regex: Simple patterns
+    2. CFG: Hierarchical structure
+    3. Transformer: Learn everything from data
+    """
+    print(f"\n{'=' * 70}")
+    print("PROGRESSION: REGEX → CFG → TRANSFORMER")
+    print(f"{'=' * 70}\n")
+
+    example_region = "TATA SPACER CAAT SPACER TSS"
+
+    print("ANALYZING THE SAME DNA REGION WITH 3 APPROACHES:")
+    print(f"Region: {example_region}")
+    print()
+
+    print("1. REGULAR EXPRESSIONS (Type 3 - Simplest)")
+    print("-" * 70)
+    print("What they see: Individual patterns")
+    print("  - Found TATA-box at position X")
+    print("  - Found CAAT-box at position Y")
+    print("Limitation: No understanding of structure or relationships")
+    print()
+
+    print("2. CONTEXT-FREE GRAMMAR (Type 2 - More powerful)")
+    print("-" * 70)
+    print("What they see: Hierarchical structure")
+    print("  - This is a PROMOTER")
+    print("  - Promoter contains: TATA + spacer + CAAT + spacer + TSS")
+    print("  - Elements in correct order")
+    print("Limitation: Rules must be manually defined")
+    print()
+
+    grammar = DNAGrammar()
+    grammar.analyze_structure(example_region)
+
+    print("3. TRANSFORMER (Beyond Chomsky - Most powerful)")
+    print("-" * 70)
+    print("What they see: Everything, learned from data")
+    print("  - Patterns (like regex)")
+    print("  - Structure (like CFG)")
+    print("  - Context (position, combinations, long-range dependencies)")
+    print("  - Probabilistic (0.95 confidence of CTCF binding)")
+    print("Advantage: No manual rules needed - learns from examples")
+    print(f"{'=' * 70}\n")
+
+
+if __name__ == "__main__":
+    # Creating grammar
+    grammar = DNAGrammar()
+
+    # Demonstrating hierarchy
+    grammar.demonstrate_hierarchy()
+
+    # Comparing approaches
+    compare_regex_cfg_transformer()
+
+    # Testing with examples
+    print("\nTEST CASES:")
+    print("=" * 70)
+
+    test_cases = [
+        "TATA SPACER TSS",  # Simple promoter
+        "CTCF EBOX CTCF",  # Simple enhancer
+        "TATA SPACER CAAT SPACER GC SPACER TSS",  # Complex promoter
+    ]
+
+    for i, test in enumerate(test_cases, 1):
+        print(f"\nTest {i}: {test}")
+        grammar.analyze_structure(test)
