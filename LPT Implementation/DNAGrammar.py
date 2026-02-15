@@ -47,8 +47,6 @@ class DNAGrammar:
         - sequence: Raw DNA sequence
         """
 
-        # Grammar definition - Minimal but demonstrates CFG concepts
-        # This shows hierarchical structure that regex cannot express
         self.grammar_definition = r"""
             // A regulatory region is either a promoter or an enhancer
             regulatory_region: promoter | enhancer
@@ -300,76 +298,3 @@ class RegionClassifier(Transformer):
         }
 
 
-def compare_regex_cfg_transformer():
-    """
-    Comparing all three approaches to demonstrate the progression.
-
-    This is the key pedagogical point of your project:
-    1. Regex: Simple patterns
-    2. CFG: Hierarchical structure
-    3. Transformer: Learn everything from data
-    """
-    print(f"\n{'=' * 70}")
-    print("PROGRESSION: REGEX → CFG → TRANSFORMER")
-    print(f"{'=' * 70}\n")
-
-    example_region = "TATA SPACER CAAT SPACER TSS"
-
-    print("ANALYZING THE SAME DNA REGION WITH 3 APPROACHES:")
-    print(f"Region: {example_region}")
-    print()
-
-    print("1. REGULAR EXPRESSIONS (Type 3 - Simplest)")
-    print("-" * 70)
-    print("What they see: Individual patterns")
-    print("  - Found TATA-box at position X")
-    print("  - Found CAAT-box at position Y")
-    print("Limitation: No understanding of structure or relationships")
-    print()
-
-    print("2. CONTEXT-FREE GRAMMAR (Type 2 - More powerful)")
-    print("-" * 70)
-    print("What they see: Hierarchical structure")
-    print("  - This is a PROMOTER")
-    print("  - Promoter contains: TATA + spacer + CAAT + spacer + TSS")
-    print("  - Elements in correct order")
-    print("Limitation: Rules must be manually defined")
-    print()
-
-    grammar = DNAGrammar()
-    grammar.analyze_structure(example_region)
-
-    print("3. TRANSFORMER (Beyond Chomsky - Most powerful)")
-    print("-" * 70)
-    print("What they see: Everything, learned from data")
-    print("  - Patterns (like regex)")
-    print("  - Structure (like CFG)")
-    print("  - Context (position, combinations, long-range dependencies)")
-    print("  - Probabilistic (0.95 confidence of CTCF binding)")
-    print("Advantage: No manual rules needed - learns from examples")
-    print(f"{'=' * 70}\n")
-
-
-if __name__ == "__main__":
-    # Creating grammar
-    grammar = DNAGrammar()
-
-    # Demonstrating hierarchy
-    grammar.demonstrate_hierarchy()
-
-    # Comparing approaches
-    compare_regex_cfg_transformer()
-
-    # Testing with examples
-    print("\nTEST CASES:")
-    print("=" * 70)
-
-    test_cases = [
-        "TATA SPACER TSS",  # Simple promoter
-        "CTCF EBOX CTCF",  # Simple enhancer
-        "TATA SPACER CAAT SPACER GC SPACER TSS",  # Complex promoter
-    ]
-
-    for i, test in enumerate(test_cases, 1):
-        print(f"\nTest {i}: {test}")
-        grammar.analyze_structure(test)

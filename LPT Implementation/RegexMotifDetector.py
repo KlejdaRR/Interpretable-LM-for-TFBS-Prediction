@@ -285,25 +285,3 @@ def demonstrate_regex_hierarchy():
     print("See: TransformerModel.py for implementation")
     print(f"\n{'=' * 70}\n")
 
-
-if __name__ == "__main__":
-    # Running demonstration
-    demonstrate_regex_hierarchy()
-
-    # Testing with example sequences
-    detector = RegexMotifDetector()
-
-    # Test 1: Sequence with TATA box
-    print("\nTest 1: Promoter region")
-    promoter = "GCGGTATAATAAGCGGGCGGCTCAG"
-    detector.analyze_sequence(promoter)
-
-    # Test 2: Sequence with CTCF motif
-    print("\nTest 2: CTCF binding site")
-    ctcf_region = "ATCGACCGCGCAGGAGCTGATCG"
-    detector.analyze_sequence(ctcf_region)
-
-    # Test 3: Random sequence (negative control)
-    print("\nTest 3: Random sequence (negative control)")
-    random_seq = "ATCGATCGATCGATCGATCG"
-    detector.analyze_sequence(random_seq)
