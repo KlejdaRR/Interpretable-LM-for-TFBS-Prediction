@@ -1,11 +1,9 @@
 """
-This is the main script that combines all components to train and evaluate
-the DNA-LM model for TFBS prediction.
+Enhanced main script that demonstrates the full language processing hierarchy:
+Regex → CFG → Transformer for DNA sequence analysis
 
-Usage:
-1. Preparing data (sequences and labels)
-2. Configuring parameters below
-3. Run: python main.py
+This version better integrates all language processing technologies as described
+in the project description.
 """
 
 import torch
@@ -14,339 +12,294 @@ import numpy as np
 import random
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
 from data.DNAVocabulary import DNAVocabulary
 from data.TFBSDataset import TFBSDataset
 from models.TransformerModel import TransformerModel
 from training.Trainer import Trainer
 from visualization.AttentionVisualizer import AttentionVisualizer
-
-# Importing ENCODE data loader
-try:
-    from data.encode_data_loader import load_encode_peaks
-except ImportError:
-    load_encode_peaks = None
-    print("Note: encode_data_loader.py not found. Only synthetic data will be available.")
+from LPT_Implementation import RegexMotifDetector
+from LPT_Implementation import DNAGrammar
 
 
-def set_random_seed(seed: int = 42):
+def demonstrate_language_hierarchy(example_sequences):
     """
-    Method that sets random seeds for reproducibility.
-
-    Why?
-    Because neural networks use randomness (weight initialization, data shuffling, etc.)
-    Setting seeds ensures we get the same results each time we run the code.
-    This is crucial for debugging and comparing different approaches.
+    Demonstrate the complete language processing hierarchy:
+    Type 3 (Regex) → Type 2 (CFG) → Beyond (Transformer)
     """
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-    print(f"Random seed set to: {seed}")
+    print("\n" + "=" * 80)
+    print("FORMAL LANGUAGE HIERARCHY IN DNA ANALYSIS")
+    print("Demonstrating progression from simple to complex language tools")
+    print("=" * 80)
+
+    # LEVEL 1: Regular Expressions (Type 3 - Chomsky Hierarchy)
+    print("\n" + "🔹" * 20 + " LEVEL 1: REGULAR EXPRESSIONS " + "🔹" * 20)
+    print("Type 3 Languages - What they can do: Simple pattern matching")
+    print("Type 3 Languages - What they cannot do: Nested structures, context")
+
+    regex_detector = RegexMotifDetector()
+
+    for i, seq in enumerate(example_sequences[:2], 1):
+        print(f"\nExample {i}: {seq[:60]}...")
+        analysis = regex_detector.analyze_sequence(seq, verbose=True)
+
+    # LEVEL 2: Context-Free Grammars (Type 2 - Chomsky Hierarchy)
+    print("\n" + "🔸" * 20 + " LEVEL 2: CONTEXT-FREE GRAMMARS " + "🔸" * 20)
+    print("Type 2 Languages - What they can do: Hierarchical structure, composition")
+    print("Type 2 Languages - What they cannot do: Context-sensitive dependencies")
+
+    dna_grammar = DNAGrammar()
+
+    # Demonstrate CFG with example structures
+    grammar_examples = [
+        "TATA CAAT TSS",  # Simple promoter
+        "CTCF EBOX CTCF",  # Simple enhancer
+        "TATA SPACER CAAT SPACER GC SPACER TSS"  # Complex promoter
+    ]
+
+    for example in grammar_examples:
+        print(f"\nTesting structure: {example}")
+        is_valid = dna_grammar.validate_structure(example)
+        print(f"Valid regulatory structure: {is_valid}")
+        if is_valid:
+            dna_grammar.analyze_structure(example, verbose=False)
+
+    # LEVEL 3: Transformer Neural Networks (Beyond Chomsky)
+    print("\n" + "🔶" * 15 + " LEVEL 3: TRANSFORMER NEURAL NETWORKS " + "🔶" * 15)
+    print("Beyond formal languages - What they can do: Learn ANY pattern from data")
+    print("Capabilities: Long-range dependencies, context-sensitive patterns, combinations")
+
+    print("\nTransformer capabilities that exceed formal grammars:")
+    print("  Position-dependent binding (same motif, different contexts)")
+    print("  Long-range interactions (position 10 affects position 150)")
+    print("  Learned patterns (discovers motifs not explicitly programmed)")
+    print("  Quantitative predictions (0.85 binding probability)")
+    print("  Attention-based interpretability")
 
 
-def load_data(data_path: str = None):
+def compare_approaches(sequences, labels, transformer_model, vocabulary):
     """
-    Method that loads TFBS data.
-
-    Expected data format:
-    - sequences: List of DNA sequences (strings)
-    - labels: List of binary labels (0 or 1)
-              1 = TF binds here, 0 = no binding
-
-    It will take as arguments:
-        data_path: Path to data file (if None, generate synthetic data)
-
-    It will return:
-        (sequences, labels) tuple
+    Compare all three language processing approaches on the same data
     """
-    if data_path is None:
-        print("\nGenerating synthetic data for demonstration...")
+    print("\n" + "=" * 80)
+    print("COMPARATIVE ANALYSIS: REGEX vs CFG vs TRANSFORMER")
+    print("=" * 80)
 
-        def generate_random_sequence(length=200):
-            return ''.join(random.choices(['A', 'C', 'G', 'T'], k=length))
+    regex_detector = RegexMotifDetector()
+    dna_grammar = DNAGrammar()
 
-        n_samples = 1000
-        sequences = [generate_random_sequence() for _ in range(n_samples)]
-        labels = [random.randint(0, 1) for _ in range(n_samples)]
+    correct_regex = 0
+    correct_transformer = 0
+    total_evaluated = 0
 
-        print(f"Generated {n_samples} synthetic sequences")
-        print(f"  - Positive (binding): {sum(labels)}")
-        print(f"  - Negative (no binding): {n_samples - sum(labels)}")
+    print("\nAnalyzing sample sequences with all three approaches...")
 
-    else:
-        # Loading real ENCODE data
-        if load_encode_peaks is not None:
-            print(f"\nLoading real ENCODE ChIP-seq data from {data_path}...")
-            sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
+    for i in range(min(10, len(sequences))):
+        seq = sequences[i]
+        true_label = labels[i]
 
-            if not sequences:
-                print("\n Failed to load ENCODE data. Falling back to synthetic data.")
-                return load_data(None)
-        else:
-            print("\n encode_data_loader.py not found. Using synthetic data.")
-            return load_data(None)
+        print(f"\n{'─' * 60}")
+        print(f"Sequence {i + 1}: {seq[:40]}... (True: {'Binding' if true_label else 'No binding'})")
 
-    return sequences, labels
+        # REGEX APPROACH
+        regex_analysis = regex_detector.analyze_sequence(seq, verbose=False)
+        regex_prediction = 1 if regex_analysis['has_CTCF'] else 0
+        regex_correct = (regex_prediction == true_label)
 
+        # TRANSFORMER APPROACH
+        encoded = vocabulary.encode(seq, max_length=200)
+        input_tensor = torch.tensor([encoded], dtype=torch.long)
 
-def evaluate_model(model, dataloader, device):
-    """
-    Method that does comprehensive evaluation of a model.
+        with torch.no_grad():
+            transformer_output = transformer_model(input_tensor)
+            transformer_prob = torch.sigmoid(transformer_output).item()
+            transformer_prediction = 1 if transformer_prob > 0.5 else 0
+            transformer_correct = (transformer_prediction == true_label)
 
-    Metrics used:
-    - Accuracy: % of correct predictions
-    - Precision: Of predicted positives, how many are actually positive?
-    - Recall: Of actual positives, how many did we find?
-    - F1: Harmonic mean of precision and recall
-    - ROC-AUC: Area under ROC curve (overall discrimination ability)
+        print(f"  Regex:       {regex_prediction} ({'✓' if regex_correct else '✗'})")
+        print(
+            f"  Transformer: {transformer_prediction} ({transformer_prob:.3f}) ({'✓' if transformer_correct else '✗'})")
 
-    It will take as arguments:
-        model: The model to evaluate (transformer or baseline)
-        dataloader: DataLoader with test data
-        device: Device to run on
+        if regex_correct:
+            correct_regex += 1
+        if transformer_correct:
+            correct_transformer += 1
+        total_evaluated += 1
 
-    It will return:
-        Dictionary of metrics
-    """
-    model.eval()
+    print(f"\n{'=' * 60}")
+    print("SUMMARY COMPARISON:")
+    print(f"Regex Accuracy:       {correct_regex / total_evaluated:.3f} ({correct_regex}/{total_evaluated})")
+    print(
+        f"Transformer Accuracy: {correct_transformer / total_evaluated:.3f} ({correct_transformer}/{total_evaluated})")
+    print(f"{'=' * 60}")
 
-    all_predictions = []
-    all_labels = []
-    all_probabilities = []
-
-    with torch.no_grad():
-        for batch in dataloader:
-            input_ids = batch['input_ids'].to(device)
-            labels = batch['label'].to(device)
-
-            # Getting predictions
-            outputs = model(input_ids).squeeze()
-            probabilities = torch.sigmoid(outputs)
-            predictions = (probabilities > 0.5).float()
-
-            # Collecting results
-            all_predictions.extend(predictions.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-            all_probabilities.extend(probabilities.cpu().numpy())
-
-    # Calculating metrics
-    metrics = {
-        'accuracy': accuracy_score(all_labels, all_predictions),
-        'precision': precision_score(all_labels, all_predictions, zero_division=0),
-        'recall': recall_score(all_labels, all_predictions, zero_division=0),
-        'f1': f1_score(all_labels, all_predictions, zero_division=0),
-        'roc_auc': roc_auc_score(all_labels, all_probabilities)
+    return {
+        'regex_accuracy': correct_regex / total_evaluated,
+        'transformer_accuracy': correct_transformer / total_evaluated
     }
 
-    return metrics
 
+def demonstrate_tokenization_biology(vocabulary):
+    """
+    Demonstrate how k-mer tokenization relates to biological meaning
+    """
+    print("\n" + "=" * 80)
+    print("TOKENIZATION: FROM DNA TO BIOLOGICALLY MEANINGFUL UNITS")
+    print("=" * 80)
 
-def print_metrics(metrics: dict, model_name: str):
-    """
-    Method that prints evaluation metrics in a nice format.
-    """
-    print(f"\n{'=' * 70}")
-    print(f"{model_name} - Evaluation Results")
-    print(f"{'=' * 70}")
-    print(f"Accuracy:  {metrics['accuracy']:.4f}")
-    print(f"Precision: {metrics['precision']:.4f}")
-    print(f"Recall:    {metrics['recall']:.4f}")
-    print(f"F1 Score:  {metrics['f1']:.4f}")
-    print(f"ROC-AUC:   {metrics['roc_auc']:.4f}")
-    print(f"{'=' * 70}")
+    example_seq = "ATCGATCGTATAATAAGCGGGCGGCTCAG"
+
+    print(f"Original DNA sequence: {example_seq}")
+    print(f"Length: {len(example_seq)} base pairs")
+
+    print(f"\nTokenization with k={vocabulary.k}:")
+    kmers = vocabulary.sequence_to_kmers(example_seq)
+    print(f"K-mers: {kmers}")
+    print(f"Number of k-mers: {len(kmers)}")
+
+    print(f"\nEncoding to numbers:")
+    encoded = vocabulary.encode(example_seq)
+    print(f"Encoded: {encoded[:10]}... (first 10 tokens)")
+
+    print(f"\nBiological relevance of k-mer choice (k={vocabulary.k}):")
+    print(f"  • Most TF binding motifs are 6-12 bp long")
+    print(f"  • K=6 captures core motif patterns")
+    print(f"  • Vocabulary size: 4^6 + special tokens = {vocabulary.vocab_size}")
+    print(f"  • Sliding window preserves all possible binding sites")
 
 
 def main():
     """
-    Main training pipeline.
-
-    Steps:
-    1. Loading and preparing data
-    2. Creating vocabulary
-    3. Creating datasets and dataloaders
-    4. Training transformer model
-    5. Visualizing attention (interpretability)
+    Enhanced main function demonstrating the full language processing hierarchy
     """
+    print("\n" + "=" * 80)
+    print("DNA AS FORMAL LANGUAGE: COMPLETE LANGUAGE PROCESSING PIPELINE")
+    print("Alphabet Σ = {A, T, C, G} | Task: Transcription Factor Binding Site Prediction")
+    print("=" * 80)
 
-    print("\n" + "=" * 70)
-    print("DNA-LM TRAINING PIPELINE")
-    print("Interpretable Transformer for TFBS Prediction")
-    print("=" * 70)
-
+    # Configuration
     config = {
-        # Data
-        'data_path': './ENCFF308JDD.bed',
+        'data_path': None,  # Use synthetic data for demo
         'max_seq_length': 200,
-        'test_split': 0.2,
-        'val_split': 0.1,
-
-        # Vocabulary
-        'k': 6,  # k-mer size
-
-        # Model
+        'k': 6,
         'd_model': 128,
         'nhead': 8,
         'num_layers': 4,
-        'dropout': 0.1,
-
-        # Training
         'batch_size': 32,
         'learning_rate': 1e-4,
-        'num_epochs': 20,
-        'early_stopping_patience': 5,
-
-        # Paths
+        'num_epochs': 5,  # Reduced for demo
         'output_dir': './outputs',
-
         'random_seed': 42,
         'device': 'cuda' if torch.cuda.is_available() else 'cpu'
     }
 
-    print("\nConfiguration:")
-    for key, value in config.items():
-        print(f"  {key}: {value}")
-
+    # Set seed and create output directory
+    random.seed(config['random_seed'])
+    np.random.seed(config['random_seed'])
+    torch.manual_seed(config['random_seed'])
     os.makedirs(config['output_dir'], exist_ok=True)
-    print(f"\nOutput directory created: {config['output_dir']}")
 
-    # STEP 1: Setting random seed
-    set_random_seed(config['random_seed'])
+    # Generate sample data
+    print("\nGenerating synthetic DNA sequences for demonstration...")
 
-    # STEP 2: Loading data
-    sequences, labels = load_data(config['data_path'])
+    def generate_random_sequence(length=200):
+        return ''.join(random.choices(['A', 'C', 'G', 'T'], k=length))
 
-    # STEP 3: Creating vocabulary
-    print("\n" + "-" * 70)
-    print("Creating DNA vocabulary...")
-    print("-" * 70)
-    vocabulary = DNAVocabulary(6)
+    sequences = [generate_random_sequence() for _ in range(200)]
+    labels = [random.randint(0, 1) for _ in range(200)]
 
-    # STEP 4: Splitting data (train/val/test)
-    print("\n" + "-" * 70)
-    print("Splitting data...")
-    print("-" * 70)
+    # Create vocabulary (tokenizer)
+    print("\nCreating DNA vocabulary (k-mer tokenizer)...")
+    vocabulary = DNAVocabulary(k=config['k'])
 
-    n_total = len(sequences)
-    n_test = int(n_total * config['test_split'])
-    n_val = int((n_total - n_test) * config['val_split'])
-    n_train = n_total - n_test - n_val
+    # DEMONSTRATION 1: Language Hierarchy
+    demonstrate_language_hierarchy(sequences)
 
-    # Shuffling and split
-    indices = list(range(n_total))
-    random.shuffle(indices)
+    # DEMONSTRATION 2: Tokenization
+    demonstrate_tokenization_biology(vocabulary)
 
-    train_indices = indices[:n_train]
-    val_indices = indices[n_train:n_train + n_val]
-    test_indices = indices[n_train + n_val:]
+    # DEMONSTRATION 3: Quick transformer training
+    print("\n" + "=" * 80)
+    print("TRAINING TRANSFORMER MODEL (Brief Demo)")
+    print("=" * 80)
 
-    train_sequences = [sequences[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-
-    val_sequences = [sequences[i] for i in val_indices]
-    val_labels = [labels[i] for i in val_indices]
-
-    test_sequences = [sequences[i] for i in test_indices]
-    test_labels = [labels[i] for i in test_indices]
-
-    print(f"Data split:")
-    print(f"  Training:   {n_train} samples")
-    print(f"  Validation: {n_val} samples")
-    print(f"  Test:       {n_test} samples")
-
-    # STEP 5: Creating datasets
-    print("\n" + "-" * 70)
-    print("Creating datasets...")
-    print("-" * 70)
-
-    train_dataset = TFBSDataset(sequences=train_sequences, labels=train_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
-        use_augmentation=True
+    # Create small dataset for quick demo
+    train_dataset = TFBSDataset(
+        sequences=sequences[:150],
+        labels=labels[:150],
+        vocabulary=vocabulary,
+        max_length=config['max_seq_length']
     )
-    val_dataset = TFBSDataset(sequences=val_sequences, labels=val_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
-        use_augmentation=False
-    )
-    test_dataset = TFBSDataset(sequences=test_sequences, labels=test_labels, vocabulary=vocabulary, max_length=config['max_seq_length'],
-        use_augmentation=False
+    val_dataset = TFBSDataset(
+        sequences=sequences[150:],
+        labels=labels[150:],
+        vocabulary=vocabulary,
+        max_length=config['max_seq_length']
     )
 
-    # STEP 6: Creating data loaders
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=0)
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
 
-    # STEP 7: Creating and train transformer model
-    print("\n" + "-" * 70)
-    print("Creating Transformer model...")
-    print("-" * 70)
-
-    transformer_model = TransformerModel(vocab_size=vocabulary.vocab_size, d_model=config['d_model'],
+    # Create and train transformer
+    transformer_model = TransformerModel(
+        vocab_size=vocabulary.vocab_size,
+        d_model=config['d_model'],
         nhead=config['nhead'],
         num_layers=config['num_layers'],
-        dropout=config['dropout'],
         max_seq_length=config['max_seq_length']
     )
 
-    # Training
-    trainer = Trainer(model=transformer_model, device=config['device'], learning_rate=config['learning_rate'])
+    trainer = Trainer(
+        model=transformer_model,
+        device=config['device'],
+        learning_rate=config['learning_rate']
+    )
 
+    # Quick training
     history = trainer.train(
         train_loader=train_loader,
         val_loader=val_loader,
         num_epochs=config['num_epochs'],
-        early_stopping_patience=config['early_stopping_patience'],
-        save_dir=config['output_dir']  # Pass the output directory
+        early_stopping_patience=3,
+        save_dir=config['output_dir']
     )
-    # Evaluating
-    print("\n" + "-" * 70)
-    print("Evaluating on test set...")
-    print("-" * 70)
-    transformer_metrics = evaluate_model(
-        transformer_model,
-        test_loader,
-        config['device']
-    )
-    print_metrics(transformer_metrics, "Transformer Model")
 
-    # STEP 8: Attention visualization (interpretability)
-    print("\n" + "=" * 70)
-    print("INTERPRETABILITY: Attention Visualization")
-    print("=" * 70)
+    # DEMONSTRATION 4: Comparative Analysis
+    comparison_results = compare_approaches(
+        sequences[150:], labels[150:],
+        transformer_model, vocabulary
+    )
+
+    # DEMONSTRATION 5: Attention Visualization
+    print("\n" + "=" * 80)
+    print("INTERPRETABILITY: ATTENTION VISUALIZATION")
+    print("=" * 80)
 
     visualizer = AttentionVisualizer(transformer_model, vocabulary)
 
-    # Visualizing a few test examples
-    print("\nGenerating attention visualizations for example sequences...")
-    for i in range(min(3, len(test_sequences))):
-        seq = test_sequences[i]
-        label = test_labels[i]
+    # Visualize one example
+    example_seq = sequences[150]
+    print(f"\nAnalyzing sequence: {example_seq[:50]}...")
 
-        print(f"\nExample {i + 1}:")
-        print(f"  Sequence: {seq[:50]}...")
-        print(f"  True label: {label} ({'Binding' if label == 1 else 'No binding'})")
+    attention_data = visualizer.get_attention_weights(example_seq)
+    print(f"Transformer prediction: {attention_data['prediction']:.3f}")
 
-        attention_data = visualizer.get_attention_weights(seq)
-        print(f"  Prediction: {attention_data['prediction']:.3f}")
+    # Save visualization
+    heatmap_path = os.path.join(config['output_dir'], 'demo_attention_heatmap.png')
+    visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
 
-        # Creating visualizations with correct paths
-        heatmap_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_heatmap.png')
-        importance_path = os.path.join(config['output_dir'], f'attention_example_{i + 1}_importance.png')
-
-        visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
-        visualizer.plot_sequence_importance(attention_data, save_path=importance_path)
-
-        # Finding important regions
-        regions = visualizer.find_important_regions(attention_data)
-        if regions:
-            print(f"  Important regions: {regions}")
-
-    # STEP 9: Saving final summary
-    print("\n" + "=" * 70)
-    print("PIPELINE COMPLETE!")
-    print("=" * 70)
-    print(f"\nResults saved in: {config['output_dir']}")
-    print("  - best_model.pt: Trained model weights")
-    print("  - attention_*.png: Attention visualization plots")
-    print("=" * 70)
+    # Final summary
+    print("\n" + "=" * 80)
+    print("LANGUAGE PROCESSING TECHNOLOGIES DEMONSTRATION COMPLETE")
+    print("=" * 80)
+    print("\nSummary of implemented technologies:")
+    print("  Regular Expressions (Type 3) - Pattern matching for known motifs")
+    print("  Context-Free Grammars (Type 2) - Hierarchical regulatory structures")
+    print("  K-mer Tokenization - Biologically meaningful segmentation")
+    print("  Transformer Architecture - Neural language model for TFBS prediction")
+    print("  Attention Visualization - Interpretability of learned patterns")
+    print(f"\nAll outputs saved in: {config['output_dir']}")
+    print("=" * 80)
 
 
 if __name__ == "__main__":
