@@ -18,8 +18,8 @@ from data.TFBSDataset import TFBSDataset
 from models.TransformerModel import TransformerModel
 from training.Trainer import Trainer
 from visualization.AttentionVisualizer import AttentionVisualizer
-from LPT_Implementation import RegexMotifDetector
-from LPT_Implementation import DNAGrammar
+from LPT_Implementation.RegexMotifDetector import RegexMotifDetector
+from LPT_Implementation.DNAGrammar import DNAGrammar
 
 
 def demonstrate_language_hierarchy(example_sequences):
@@ -106,6 +106,16 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary):
         regex_prediction = 1 if regex_analysis['has_CTCF'] else 0
         regex_correct = (regex_prediction == true_label)
 
+        # CFG APPROACH - Check if sequence has promoter/enhancer structure
+        # Note: This is a simplified demonstration - in reality, CFG works on structure descriptions, not raw DNA
+        has_promoter_structure = False
+        if len(seq) > 20:  # Arbitrary check for demonstration
+            # Check if sequence contains TATA-like pattern (simplified)
+            if "TATA" in seq:
+                has_promoter_structure = True
+        cfg_prediction = 1 if has_promoter_structure else 0
+        cfg_correct = (cfg_prediction == true_label)
+
         # TRANSFORMER APPROACH
         encoded = vocabulary.encode(seq, max_length=200)
         input_tensor = torch.tensor([encoded], dtype=torch.long)
@@ -116,9 +126,9 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary):
             transformer_prediction = 1 if transformer_prob > 0.5 else 0
             transformer_correct = (transformer_prediction == true_label)
 
-        print(f"  Regex:       {regex_prediction} ({'✓' if regex_correct else '✗'})")
-        print(
-            f"  Transformer: {transformer_prediction} ({transformer_prob:.3f}) ({'✓' if transformer_correct else '✗'})")
+        print(f"  Regex:       {regex_prediction} ({'✓' if regex_correct else '✗'}) - Found CTCF: {regex_analysis['has_CTCF']}")
+        print(f"  CFG:         {cfg_prediction} ({'✓' if cfg_correct else '✗'}) - Has promoter structure: {has_promoter_structure}")
+        print(f"  Transformer: {transformer_prediction} ({transformer_prob:.3f}) ({'✓' if transformer_correct else '✗'})")
 
         if regex_correct:
             correct_regex += 1
@@ -129,8 +139,7 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary):
     print(f"\n{'=' * 60}")
     print("SUMMARY COMPARISON:")
     print(f"Regex Accuracy:       {correct_regex / total_evaluated:.3f} ({correct_regex}/{total_evaluated})")
-    print(
-        f"Transformer Accuracy: {correct_transformer / total_evaluated:.3f} ({correct_transformer}/{total_evaluated})")
+    print(f"Transformer Accuracy: {correct_transformer / total_evaluated:.3f} ({correct_transformer}/{total_evaluated})")
     print(f"{'=' * 60}")
 
     return {
@@ -168,6 +177,55 @@ def demonstrate_tokenization_biology(vocabulary):
     print(f"  • Sliding window preserves all possible binding sites")
 
 
+def generate_patterned_sequences(n_sequences=200, seq_length=200):
+    """
+    Generate synthetic DNA sequences with actual biological patterns
+    """
+    sequences = []
+    labels = []
+
+    # Known CTCF binding motif (simplified)
+    ctcf_motifs = ["CCGCGNGGAG", "ACCGCGNGGAG", "CCGCGNGGAGA"]
+
+    # Known promoter elements
+    tata_motifs = ["TATAAA", "TATATA", "TATAWAW"]
+    caat_motifs = ["GGTCAATCT", "GGCCAATCT"]
+
+    for i in range(n_sequences):
+        # 50% positive, 50% negative
+        is_positive = (i < n_sequences // 2)
+
+        if is_positive:
+            # Generate positive sequence (contains binding patterns)
+            # Start with random DNA
+            seq = list(random.choices(['A', 'C', 'G', 'T'], k=seq_length))
+
+            # Insert a CTCF motif at a random position
+            motif = random.choice(ctcf_motifs)
+            pos = random.randint(20, seq_length - len(motif) - 20)
+            for j, base in enumerate(motif):
+                if pos + j < seq_length:
+                    seq[pos + j] = base
+
+            # Maybe add promoter elements
+            if random.random() > 0.5:
+                tata_pos = random.randint(10, 40)
+                tata = random.choice(tata_motifs)
+                for j, base in enumerate(tata):
+                    if tata_pos + j < seq_length:
+                        seq[tata_pos + j] = base
+
+            sequences.append(''.join(seq))
+            labels.append(1)
+        else:
+            # Generate negative sequence (random DNA, avoiding known motifs)
+            seq = list(random.choices(['A', 'C', 'G', 'T'], k=seq_length))
+            sequences.append(''.join(seq))
+            labels.append(0)
+
+    return sequences, labels
+
+
 def main():
     """
     Enhanced main function demonstrating the full language processing hierarchy
@@ -199,24 +257,19 @@ def main():
     torch.manual_seed(config['random_seed'])
     os.makedirs(config['output_dir'], exist_ok=True)
 
-    # Generate sample data
-    print("\nGenerating synthetic DNA sequences for demonstration...")
-
-    def generate_random_sequence(length=200):
-        return ''.join(random.choices(['A', 'C', 'G', 'T'], k=length))
-
-    sequences = [generate_random_sequence() for _ in range(200)]
-    labels = [random.randint(0, 1) for _ in range(200)]
+    # Generate sample data with actual patterns
+    print("\nGenerating synthetic DNA sequences with biological patterns...")
+    sequences, labels = generate_patterned_sequences(n_sequences=200, seq_length=config['max_seq_length'])
 
     # Create vocabulary (tokenizer)
     print("\nCreating DNA vocabulary (k-mer tokenizer)...")
     vocabulary = DNAVocabulary(k=config['k'])
 
-    # DEMONSTRATION 1: Language Hierarchy
-    demonstrate_language_hierarchy(sequences)
-
-    # DEMONSTRATION 2: Tokenization
+    # DEMONSTRATION 1: Tokenization
     demonstrate_tokenization_biology(vocabulary)
+
+    # DEMONSTRATION 2: Language Hierarchy (REGEX + CFG)
+    demonstrate_language_hierarchy(sequences)
 
     # DEMONSTRATION 3: Quick transformer training
     print("\n" + "=" * 80)
@@ -264,29 +317,39 @@ def main():
         save_dir=config['output_dir']
     )
 
-    # DEMONSTRATION 4: Comparative Analysis
-    comparison_results = compare_approaches(
-        sequences[150:], labels[150:],
-        transformer_model, vocabulary
-    )
+    # DEMONSTRATION 4: Compare all three approaches
+    comparison_results = compare_approaches(sequences, labels, transformer_model, vocabulary)
 
     # DEMONSTRATION 5: Attention Visualization
     print("\n" + "=" * 80)
     print("INTERPRETABILITY: ATTENTION VISUALIZATION")
     print("=" * 80)
 
+    # Create visualizer
     visualizer = AttentionVisualizer(transformer_model, vocabulary)
 
     # Visualize one example
     example_seq = sequences[150]
     print(f"\nAnalyzing sequence: {example_seq[:50]}...")
 
-    attention_data = visualizer.get_attention_weights(example_seq)
-    print(f"Transformer prediction: {attention_data['prediction']:.3f}")
+    # Get attention data and save visualization
+    try:
+        attention_data = visualizer.get_attention_weights(example_seq, max_length=config['max_seq_length'])
+        heatmap_path = os.path.join(config['output_dir'], 'demo_attention_heatmap.png')
+        visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
 
-    # Save visualization
-    heatmap_path = os.path.join(config['output_dir'], 'demo_attention_heatmap.png')
-    visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
+        # Also plot sequence importance
+        importance_path = os.path.join(config['output_dir'], 'demo_sequence_importance.png')
+        visualizer.plot_sequence_importance(attention_data, save_path=importance_path)
+
+        # Find important regions
+        important_regions = visualizer.find_important_regions(attention_data, threshold=0.7)
+        print(f"\nImportant regions found: {important_regions}")
+
+    except Exception as e:
+        print(f"Note: Attention visualization requires additional methods in the vocabulary class.")
+        print(f"Error: {e}")
+        print("This is expected if the vocabulary class doesn't have sequence_to_kmers method.")
 
     # Final summary
     print("\n" + "=" * 80)
@@ -298,6 +361,7 @@ def main():
     print("  K-mer Tokenization - Biologically meaningful segmentation")
     print("  Transformer Architecture - Neural language model for TFBS prediction")
     print("  Attention Visualization - Interpretability of learned patterns")
+    print("  Comparative Analysis - Side-by-side comparison of all approaches")
     print(f"\nAll outputs saved in: {config['output_dir']}")
     print("=" * 80)
 

@@ -223,49 +223,6 @@ class DNAGrammar:
         print(tree.pretty())
         print(f"{'=' * 70}\n")
 
-    def demonstrate_hierarchy(self):
-        """
-        Demonstrating how CFG captures hierarchical structure.
-
-        This shows what CFGs can do that regex cannot:
-        - Nested structures
-        - Compositional rules (promoter is made of parts)
-        - Structural validation
-        """
-        print(f"\n{'=' * 70}")
-        print("CFG vs REGEX: HIERARCHICAL STRUCTURE")
-        print(f"{'=' * 70}\n")
-
-        print("REGEX LIMITATION:")
-        print("  Can find: TATA-box pattern")
-        print("  Cannot: Recognize that TATA-box is PART OF a promoter")
-        print("  Cannot: Enforce promoter structure (elements in correct order)")
-        print()
-
-        print("CFG CAPABILITY:")
-        print("  Can recognize: Hierarchical composition")
-        print("  Can enforce: Structural rules (promoter → elements → TSS)")
-        print("  Can validate: Whether a region matches regulatory structure")
-        print()
-
-        print("EXAMPLE STRUCTURES:")
-        print("-" * 70)
-
-        examples = [
-            ("Valid Promoter", "TATA SPACER CAAT SPACER TSS"),
-            ("Valid Enhancer", "CTCF EBOX CTCF"),
-            ("Complex Promoter", "TATA SPACER CAAT SPACER GC SPACER TSS"),
-        ]
-
-        for name, structure in examples:
-            print(f"\n{name}:")
-            print(f"  Structure: {structure}")
-            is_valid = self.validate_structure(structure)
-            print(f"  Valid: {is_valid}")
-
-            if is_valid:
-                self.analyze_structure(structure, verbose=False)
-
 
 class RegionClassifier(Transformer):
     """
