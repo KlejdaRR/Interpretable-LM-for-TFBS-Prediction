@@ -38,6 +38,10 @@ class DNAGrammar:
         - sequence: Raw DNA sequence
         """
 
+        # DNA grammar:
+          # regulatory_region = promoter OR enhancer
+          # promoter = "TATA" + elements + "TSS"
+          # enhancer = tfbs + tfbs + tfbs*  # (at least 2 tfbs)
         self.grammar_definition = r"""
             // A regulatory region is either a promoter or an enhancer
             
@@ -62,7 +66,7 @@ class DNAGrammar:
             %ignore WS
         """
 
-        # Creating the parser
+        # Feeding Lark the grammar in order for it to build the parser
         self.parser = Lark(
             self.grammar_definition,
             start='regulatory_region',  # Starting symbol

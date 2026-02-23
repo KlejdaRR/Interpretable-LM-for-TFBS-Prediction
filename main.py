@@ -388,7 +388,7 @@ def main():
         except Exception as e:
             print(f"Visualization error: {e}")
 
-
+    print("\nComparison Results:", comparison_results)
     print("\n" + "=" * 80)
     print("PIPELINE COMPLETE!")
     print("=" * 80)
