@@ -104,7 +104,7 @@ class Trainer:
             # STEP 2: Forward pass - getting model predictions
             # Using squeeze here because Classifier outputs shape [batch_size, 1] (2D)
             # and BCEWithLogitsLoss expects shape [batch_size] (1D)
-            # so squeeze safely removes the unnecessary dimension of size 1
+            # so squeeze removes the unnecessary dimension of size 1
             predictions = self.model(input_ids).squeeze()
 
             # STEP 3: Calculating loss

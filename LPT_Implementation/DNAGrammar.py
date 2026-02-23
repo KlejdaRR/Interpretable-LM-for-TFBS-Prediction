@@ -2,37 +2,28 @@
 DNA Context-Free Grammar
 
 This module implements a context-free grammar (CFG) for modeling DNA regulatory regions.
-This demonstrates the next level in the Chomsky hierarchy after regular expressions.
+CFGs represent the next level in the Chomsky hierarchy after regular expressions.
 
 What is a Context-Free Grammar?
 A CFG is a set of recursive rules that can generate and parse nested structures.
-Example: S → aSb | ε generates strings like "ab", "aabb", "aaabbb"
 
-Why CFG for DNA?
+Why are we using CFG for DNA?
 Regulatory regions have hierarchical structure:
 - Promoter contains: TATA-box + CAAT-box + Transcription Start Site
 - Enhancer contains: Multiple transcription factor binding sites
 - Gene contains: Promoter + Exons + Introns
 
-Regular expressions cannot capture this nested, hierarchical organization.
-
-Connection to Language Processing Technologies course:
-- Context-free grammars and pushdown automata
-- Parsing algorithms
-- Chomsky hierarchy (Type 2 languages)
-- Lark parser generator (similar to ANTLR, Yacc)
+Therefore, regular expressions cannot capture this nested, hierarchical organization.
 """
 
-from lark import Lark, Transformer, Tree
-from typing import Dict, List, Optional
+from lark import Lark, Tree
+from typing import Dict, Optional
 
 
 class DNAGrammar:
     """
-    A context-free grammar for DNA regulatory regions.
-
-    This demonstrates how CFGs can model the hierarchical structure of
-    genomic elements - something regex cannot do.
+    This class demonstrates how CFGs can model the hierarchical structure of
+    genomic elements.
     """
 
     def __init__(self):
@@ -49,14 +40,14 @@ class DNAGrammar:
 
         self.grammar_definition = r"""
             // A regulatory region is either a promoter or an enhancer
+            
             regulatory_region: promoter | enhancer
 
             // Promoter: TATA-box, optional elements, then TSS
-            // This shows hierarchical composition: promoter CONTAINS elements
+            // This shows hierarchical composition because promoter CONTAINS elements
             promoter: "TATA" elements "TSS"
 
             // Elements: can have multiple components
-            // This demonstrates nested structure
             elements: element*
 
             element: "CAAT" | "GC" | "SPACER"
@@ -72,7 +63,6 @@ class DNAGrammar:
         """
 
         # Creating the parser
-        # Lark will build a pushdown automaton from our grammar
         self.parser = Lark(
             self.grammar_definition,
             start='regulatory_region',  # Starting symbol
@@ -81,20 +71,16 @@ class DNAGrammar:
         )
 
         print("DNA Context-Free Grammar initialized")
-        print("  - Grammar type: Type 2 (Context-Free)")
         print("  - Parser algorithm: LALR")
         print("  - Structures: Promoter, Enhancer, TFBS")
 
     def parse(self, sequence_structure: str) -> Optional[Tree]:
         """
-        Parsing a DNA structure description into a parse tree.
-
-        This demonstrates how CFGs can recognize hierarchical structure.
+        Method for parsing a DNA structure description into a parse tree.
 
         Parameters:
             sequence_structure: String describing regulatory region structure
                               Example: "TATAWAW SPACER GGYCAATCT SPACER TSS"
-
         Returns:
             Parse tree if valid, None if parsing fails
 
@@ -120,8 +106,6 @@ class DNAGrammar:
         """
         Validating whether a sequence matches the regulatory region grammar.
 
-        This is what CFGs excel at: recognizing valid structures.
-
         Parameters:
             sequence_structure: Structure to validate
 
@@ -130,67 +114,6 @@ class DNAGrammar:
         """
         tree = self.parse(sequence_structure)
         return tree is not None
-
-    def analyze_structure(self, sequence_structure: str, verbose: bool = True) -> Dict:
-        """
-        Analyzing the hierarchical structure of a regulatory region.
-
-        This demonstrates the power of CFGs over regex:
-        - CFGs can recognize nested structures
-        - CFGs can enforce ordering rules
-        - CFGs can model composition (promoter contains elements)
-
-        Parameters:
-            sequence_structure: Structure string to analyze
-            verbose: Whether to print detailed analysis
-
-        Returns:
-            Dictionary with structural analysis
-        """
-        tree = self.parse(sequence_structure)
-
-        if tree is None:
-            return {
-                'valid': False,
-                'error': 'Failed to parse - structure does not match grammar'
-            }
-
-        # Analyzing the parse tree
-        analysis = {
-            'valid': True,
-            'type': None,
-            'components': [],
-            'has_promoter': False,
-            'has_enhancer': False,
-            'promoter_elements': [],
-            'tfbs_count': 0
-        }
-
-        # Walking the tree to extract information
-        for child in tree.children:
-            if hasattr(child, 'data'):
-                if child.data == 'promoter':
-                    analysis['has_promoter'] = True
-                    analysis['type'] = 'promoter' if not analysis['has_enhancer'] else 'promoter+enhancer'
-
-                    # Extracting promoter elements
-                    for element in child.children:
-                        if hasattr(element, 'data'):
-                            elem_type = element.data
-                            if elem_type in ['tata_box', 'caat_box', 'gc_box', 'tss']:
-                                analysis['promoter_elements'].append(elem_type)
-
-                elif child.data == 'enhancer':
-                    analysis['has_enhancer'] = True
-                    analysis['type'] = 'enhancer' if not analysis['has_promoter'] else 'promoter+enhancer'
-
-                    # Counting TFBS in enhancer
-                    analysis['tfbs_count'] = self._count_tfbs(child)
-
-        if verbose:
-            self._print_analysis(analysis, tree)
-
-        return analysis
 
     def _count_tfbs(self, enhancer_node) -> int:
         """Counting transcription factor binding sites in enhancer"""
@@ -223,35 +146,5 @@ class DNAGrammar:
         print(tree.pretty())
         print(f"{'=' * 70}\n")
 
-
-class RegionClassifier(Transformer):
-    """
-    A Lark Transformer that classifies regulatory regions.
-
-    This demonstrates how CFG parse trees can be transformed into
-    structured data for downstream analysis.
-    """
-
-    def regulatory_region(self, items):
-        """Transforming regulatory_region rule"""
-        return {
-            'type': 'regulatory_region',
-            'components': items
-        }
-
-    def promoter(self, items):
-        """Transforming promoter rule"""
-        elements = [item for item in items if item is not None]
-        return {
-            'type': 'promoter',
-            'elements': elements
-        }
-
-    def enhancer(self, items):
-        """Transforming enhancer rule"""
-        return {
-            'type': 'enhancer',
-            'tfbs_sites': items
-        }
 
 

@@ -30,98 +30,16 @@ def set_random_seed(seed: int = 42):
     print(f"Random seed set to: {seed}")
 
 
-def generate_patterned_sequences(n_sequences=1000, seq_length=200):
-    """
-    Generate synthetic DNA sequences with actual biological patterns
-    with proper random distribution
-    """
-    sequences = []
-    labels = []
-
-    # Known CTCF binding motif
-    ctcf_motifs = ["CCGCGNGGAG", "ACCGCGNGGAG", "CCGCGNGGAGA"]
-
-    def fill_motif(motif):
-        return ''.join([random.choice(['A', 'C', 'G', 'T']) if base == 'N' else base for base in motif])
-
-    # Known promoter elements
-    tata_motifs = ["TATAAA", "TATATA", "TATAWAW"]
-    caat_motifs = ["GGTCAATCT", "GGCCAATCT"]
-
-    print("\nGenerating synthetic data with biological patterns...")
-
-    for i in range(n_sequences):
-        # Randomly deciding if this sequence is positive (50% chance)
-        is_positive = random.random() < 0.5
-
-        if is_positive:
-            # Generating positive sequence
-            seq = list(random.choices(['A', 'C', 'G', 'T'], k=seq_length))
-
-            # Inserting CTCF motif (70% of positive sequences)
-            if random.random() < 0.7:
-                motif_template = random.choice(ctcf_motifs)
-                motif = fill_motif(motif_template)
-                pos = random.randint(20, seq_length - len(motif) - 20)
-                for j, base in enumerate(motif):
-                    if pos + j < seq_length:
-                        seq[pos + j] = base
-
-            # Inserting TATA box (50% of positive sequences)
-            if random.random() < 0.5:
-                tata_template = random.choice(tata_motifs)
-                tata = tata_template.replace('W', random.choice(['A', 'T']))
-                tata_pos = random.randint(10, 40)
-                for j, base in enumerate(tata):
-                    if tata_pos + j < seq_length:
-                        seq[tata_pos + j] = base
-
-            # Inserting E-box (40% of positive sequences)
-            if random.random() < 0.4:
-                ebox_pos = random.randint(50, 150)
-                ebox = "CACGTG"  # Classic E-box
-                for j, base in enumerate(ebox):
-                    if ebox_pos + j < seq_length:
-                        seq[ebox_pos + j] = base
-
-            sequences.append(''.join(seq))
-            labels.append(1)
-        else:
-            # Generating negative sequence (random DNA)
-            seq = random.choices(['A', 'C', 'G', 'T'], k=seq_length)
-            sequences.append(''.join(seq))
-            labels.append(0)
-
-    # Shuffling to ensure random distribution
-    combined = list(zip(sequences, labels))
-    random.shuffle(combined)
-    sequences, labels = zip(*combined)
-
-    print(f"Generated {len(sequences)} sequences:")
-    print(f"  Positive: {sum(labels)} ({sum(labels) / len(labels) * 100:.1f}%)")
-    print(f"  Negative: {len(labels) - sum(labels)} ({(len(labels) - sum(labels)) / len(labels) * 100:.1f}%)")
-
-    return list(sequences), list(labels)
-
-
 def load_data(data_path: str = None):
     """Loading TFBS data (ENCODE)"""
-    if data_path is None or not os.path.exists(data_path):
-        return generate_patterned_sequences(n_sequences=1000)
-    else:
-        if load_encode_peaks is not None:
-            print(f"\nLoading real ENCODE ChIP-seq data from {data_path}...")
-            sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
-            if sequences:
-                return sequences, labels
-        print("\nFalling back to synthetic data.")
-        return generate_patterned_sequences(n_sequences=1000)
+    sequences, labels = load_encode_peaks(data_path, max_sequences=1000)
+    if sequences:
+        return sequences, labels
 
 
 def evaluate_model(model, dataloader, device):
     """Evaluation of the model"""
     model.eval()
-
     all_predictions = []
     all_labels = []
     all_probabilities = []
@@ -142,9 +60,7 @@ def evaluate_model(model, dataloader, device):
     metrics = {
         'accuracy': accuracy_score(all_labels, all_predictions),
         'precision': precision_score(all_labels, all_predictions, zero_division=0),
-        'recall': recall_score(all_labels, all_predictions, zero_division=0),
-        'f1': f1_score(all_labels, all_predictions, zero_division=0),
-        'roc_auc': roc_auc_score(all_labels, all_probabilities)
+        'recall': recall_score(all_labels, all_predictions, zero_division=0)
     }
 
     return metrics
@@ -470,7 +386,7 @@ def main():
             print(f"  ✓ Visualizations saved")
 
         except Exception as e:
-            print(f"  ⚠️ Visualization error: {e}")
+            print(f"Visualization error: {e}")
 
 
     print("\n" + "=" * 80)
