@@ -11,8 +11,6 @@ from torch.utils.data import DataLoader
 import numpy as np
 import random
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-
 from data.DNAVocabulary import DNAVocabulary
 from data.TFBSDataset import TFBSDataset
 from models.TransformerModel import TransformerModel
@@ -24,7 +22,7 @@ from LPT_Implementation.DNAGrammar import DNAGrammar
 
 def demonstrate_language_hierarchy(example_sequences):
     """
-    Demonstrate the complete language processing hierarchy:
+    Demonstrating the complete language processing hierarchy:
     Type 3 (Regex) → Type 2 (CFG) → Beyond (Transformer)
     """
     print("\n" + "=" * 80)
@@ -50,7 +48,7 @@ def demonstrate_language_hierarchy(example_sequences):
 
     dna_grammar = DNAGrammar()
 
-    # Demonstrate CFG with example structures
+    # Demonstrating CFG with example structures
     grammar_examples = [
         "TATA CAAT TSS",  # Simple promoter
         "CTCF EBOX CTCF",  # Simple enhancer
@@ -65,21 +63,11 @@ def demonstrate_language_hierarchy(example_sequences):
             dna_grammar.analyze_structure(example, verbose=False)
 
     # LEVEL 3: Transformer Neural Networks (Beyond Chomsky)
-    print("\n" + "🔶" * 15 + " LEVEL 3: TRANSFORMER NEURAL NETWORKS " + "🔶" * 15)
-    print("Beyond formal languages - What they can do: Learn ANY pattern from data")
-    print("Capabilities: Long-range dependencies, context-sensitive patterns, combinations")
-
-    print("\nTransformer capabilities that exceed formal grammars:")
-    print("  Position-dependent binding (same motif, different contexts)")
-    print("  Long-range interactions (position 10 affects position 150)")
-    print("  Learned patterns (discovers motifs not explicitly programmed)")
-    print("  Quantitative predictions (0.85 binding probability)")
-    print("  Attention-based interpretability")
-
+    print("LEVEL 3: TRANSFORMER NEURAL NETWORKS ")
 
 def compare_approaches(sequences, labels, transformer_model, vocabulary):
     """
-    Compare all three language processing approaches on the same data
+    Comparing all three language processing approaches on the same data
     """
     print("\n" + "=" * 80)
     print("COMPARATIVE ANALYSIS: REGEX vs CFG vs TRANSFORMER")
@@ -147,39 +135,9 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary):
         'transformer_accuracy': correct_transformer / total_evaluated
     }
 
-
-def demonstrate_tokenization_biology(vocabulary):
-    """
-    Demonstrate how k-mer tokenization relates to biological meaning
-    """
-    print("\n" + "=" * 80)
-    print("TOKENIZATION: FROM DNA TO BIOLOGICALLY MEANINGFUL UNITS")
-    print("=" * 80)
-
-    example_seq = "ATCGATCGTATAATAAGCGGGCGGCTCAG"
-
-    print(f"Original DNA sequence: {example_seq}")
-    print(f"Length: {len(example_seq)} base pairs")
-
-    print(f"\nTokenization with k={vocabulary.k}:")
-    kmers = vocabulary.sequence_to_kmers(example_seq)
-    print(f"K-mers: {kmers}")
-    print(f"Number of k-mers: {len(kmers)}")
-
-    print(f"\nEncoding to numbers:")
-    encoded = vocabulary.encode(example_seq)
-    print(f"Encoded: {encoded[:10]}... (first 10 tokens)")
-
-    print(f"\nBiological relevance of k-mer choice (k={vocabulary.k}):")
-    print(f"  • Most TF binding motifs are 6-12 bp long")
-    print(f"  • K=6 captures core motif patterns")
-    print(f"  • Vocabulary size: 4^6 + special tokens = {vocabulary.vocab_size}")
-    print(f"  • Sliding window preserves all possible binding sites")
-
-
 def generate_patterned_sequences(n_sequences=200, seq_length=200):
     """
-    Generate synthetic DNA sequences with actual biological patterns
+    Generating synthetic DNA sequences with actual biological patterns
     """
     sequences = []
     labels = []
@@ -196,18 +154,17 @@ def generate_patterned_sequences(n_sequences=200, seq_length=200):
         is_positive = (i < n_sequences // 2)
 
         if is_positive:
-            # Generate positive sequence (contains binding patterns)
-            # Start with random DNA
+            # Generating positive sequence (contains binding patterns)
+            # Starting with random DNA
             seq = list(random.choices(['A', 'C', 'G', 'T'], k=seq_length))
 
-            # Insert a CTCF motif at a random position
+            # Inserting a CTCF motif at a random position
             motif = random.choice(ctcf_motifs)
             pos = random.randint(20, seq_length - len(motif) - 20)
             for j, base in enumerate(motif):
                 if pos + j < seq_length:
                     seq[pos + j] = base
 
-            # Maybe add promoter elements
             if random.random() > 0.5:
                 tata_pos = random.randint(10, 40)
                 tata = random.choice(tata_motifs)
@@ -218,7 +175,7 @@ def generate_patterned_sequences(n_sequences=200, seq_length=200):
             sequences.append(''.join(seq))
             labels.append(1)
         else:
-            # Generate negative sequence (random DNA, avoiding known motifs)
+            # Generating negative sequence (random DNA, avoiding known motifs)
             seq = list(random.choices(['A', 'C', 'G', 'T'], k=seq_length))
             sequences.append(''.join(seq))
             labels.append(0)
@@ -227,9 +184,6 @@ def generate_patterned_sequences(n_sequences=200, seq_length=200):
 
 
 def main():
-    """
-    Enhanced main function demonstrating the full language processing hierarchy
-    """
     print("\n" + "=" * 80)
     print("DNA AS FORMAL LANGUAGE: COMPLETE LANGUAGE PROCESSING PIPELINE")
     print("Alphabet Σ = {A, T, C, G} | Task: Transcription Factor Binding Site Prediction")
@@ -237,7 +191,7 @@ def main():
 
     # Configuration
     config = {
-        'data_path': None,  # Use synthetic data for demo
+        'data_path': None,
         'max_seq_length': 200,
         'k': 6,
         'd_model': 128,
@@ -245,38 +199,34 @@ def main():
         'num_layers': 4,
         'batch_size': 32,
         'learning_rate': 1e-4,
-        'num_epochs': 5,  # Reduced for demo
+        'num_epochs': 5,
         'output_dir': './outputs',
         'random_seed': 42,
         'device': 'cuda' if torch.cuda.is_available() else 'cpu'
     }
 
-    # Set seed and create output directory
     random.seed(config['random_seed'])
     np.random.seed(config['random_seed'])
     torch.manual_seed(config['random_seed'])
     os.makedirs(config['output_dir'], exist_ok=True)
 
-    # Generate sample data with actual patterns
+    # Generating sample data with actual patterns
     print("\nGenerating synthetic DNA sequences with biological patterns...")
     sequences, labels = generate_patterned_sequences(n_sequences=200, seq_length=config['max_seq_length'])
 
-    # Create vocabulary (tokenizer)
+    # Creating vocabulary (tokenizer)
     print("\nCreating DNA vocabulary (k-mer tokenizer)...")
     vocabulary = DNAVocabulary(k=config['k'])
 
-    # DEMONSTRATION 1: Tokenization
-    demonstrate_tokenization_biology(vocabulary)
-
-    # DEMONSTRATION 2: Language Hierarchy (REGEX + CFG)
+    # Language Hierarchy (REGEX + CFG)
     demonstrate_language_hierarchy(sequences)
 
-    # DEMONSTRATION 3: Quick transformer training
+    # Quick transformer training
     print("\n" + "=" * 80)
     print("TRAINING TRANSFORMER MODEL (Brief Demo)")
     print("=" * 80)
 
-    # Create small dataset for quick demo
+    # Creating small dataset for quick demo
     train_dataset = TFBSDataset(
         sequences=sequences[:150],
         labels=labels[:150],
@@ -293,7 +243,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
 
-    # Create and train transformer
+    # Creating and train transformer
     transformer_model = TransformerModel(
         vocab_size=vocabulary.vocab_size,
         d_model=config['d_model'],
@@ -317,41 +267,33 @@ def main():
         save_dir=config['output_dir']
     )
 
-    # DEMONSTRATION 4: Compare all three approaches
+    # Comparing all three approaches
     comparison_results = compare_approaches(sequences, labels, transformer_model, vocabulary)
 
-    # DEMONSTRATION 5: Attention Visualization
+    # Attention Visualization
     print("\n" + "=" * 80)
     print("INTERPRETABILITY: ATTENTION VISUALIZATION")
     print("=" * 80)
 
-    # Create visualizer
     visualizer = AttentionVisualizer(transformer_model, vocabulary)
 
-    # Visualize one example
     example_seq = sequences[150]
     print(f"\nAnalyzing sequence: {example_seq[:50]}...")
 
-    # Get attention data and save visualization
     try:
         attention_data = visualizer.get_attention_weights(example_seq, max_length=config['max_seq_length'])
         heatmap_path = os.path.join(config['output_dir'], 'demo_attention_heatmap.png')
         visualizer.plot_attention_heatmap(attention_data, save_path=heatmap_path)
 
-        # Also plot sequence importance
         importance_path = os.path.join(config['output_dir'], 'demo_sequence_importance.png')
         visualizer.plot_sequence_importance(attention_data, save_path=importance_path)
 
-        # Find important regions
         important_regions = visualizer.find_important_regions(attention_data, threshold=0.7)
         print(f"\nImportant regions found: {important_regions}")
 
     except Exception as e:
         print(f"Note: Attention visualization requires additional methods in the vocabulary class.")
-        print(f"Error: {e}")
-        print("This is expected if the vocabulary class doesn't have sequence_to_kmers method.")
 
-    # Final summary
     print("\n" + "=" * 80)
     print("LANGUAGE PROCESSING TECHNOLOGIES DEMONSTRATION COMPLETE")
     print("=" * 80)
