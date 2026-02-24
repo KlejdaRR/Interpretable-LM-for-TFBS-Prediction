@@ -134,30 +134,38 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary, dna_gra
         results['regex']['correct'] += 1 if regex_correct else 0
         results['regex']['total'] += 1
 
-        # CFG
-        structure_tokens = []
-        if any(m in seq for m in ['TATA', 'TATAAA']):
-            structure_tokens.append('TATA')
-        if any(m in seq for m in ['CAAT', 'GGTCAATCT']):
-            structure_tokens.append('CAAT')
-        if 'CTCF' in seq or re.search(r'[AG]CCGCG[CG]', seq):
-            structure_tokens.append('CTCF')
-        if re.search(r'CA[ATCG]{2}TG', seq):
-            structure_tokens.append('EBOX')
-        if 'GGGCGG' in seq:
-            structure_tokens.append('GC')
+        # CFG with structure validation
 
-        if len(structure_tokens) >= 2:
-            if 'TATA' in structure_tokens:
-                others = [t for t in structure_tokens if t != 'TATA']
-                structure = f"TATA {' SPACER '.join(others)} TSS"
-            else:
-                structure = ' '.join(structure_tokens[:2])
-        else:
-            structure = ''
+        cfg_pred = 0
 
-        cfg_valid = dna_grammar.validate_structure(structure) if structure else False
-        cfg_pred = 1 if cfg_valid else 0
+        # Checking for promoter structure
+        has_tata = any(m in seq for m in ['TATA', 'TATAAA'])
+        has_caat = any(m in seq for m in ['CAAT', 'GGTCAATCT'])
+        has_gc = 'GGGCGG' in seq
+
+        if has_tata and (has_caat or has_gc):
+            # Potential promoter: TATA-box plus other elements
+            elements = []
+            if has_caat:
+                elements.append("CAAT")
+            if has_gc:
+                elements.append("GC")
+
+            # Creating a valid promoter structure
+            structure = f"TATA {' SPACER '.join(elements)} TSS"
+            if dna_grammar.validate_structure(structure):
+                cfg_pred = 1
+
+        # Checking for enhancer structure (multiple TFBS)
+        elif has_ctcf or regex_analysis['motifs'].get('E_box', []):
+            # Count TFBS
+            tfbs_count = (1 if has_ctcf else 0) + len(regex_analysis['motifs'].get('E_box', []))
+            if tfbs_count >= 2:
+                # At least two binding sites suggests enhancer
+                structure = "CTCF SPACER CTCF" if tfbs_count >= 2 else ""
+                if structure and dna_grammar.validate_structure(structure):
+                    cfg_pred = 1
+
         cfg_correct = (cfg_pred == true_label)
         results['cfg']['correct'] += 1 if cfg_correct else 0
         results['cfg']['total'] += 1

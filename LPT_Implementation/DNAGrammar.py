@@ -41,25 +41,13 @@ class DNAGrammar:
         # DNA grammar:
           # regulatory_region = promoter OR enhancer
           # promoter = "TATA" + elements + "TSS"
-          # enhancer = tfbs + tfbs + tfbs*  # (at least 2 tfbs)
+          # enhancer = tfbs + tfbs + tfbs*  (at least 2 tfbs)
         self.grammar_definition = r"""
-            // A regulatory region is either a promoter or an enhancer
-            
             regulatory_region: promoter | enhancer
-
-            // Promoter: TATA-box, optional elements, then TSS
-            // This shows hierarchical composition because promoter CONTAINS elements
             promoter: "TATA" elements "TSS"
-
-            // Elements: can have multiple components
             elements: element*
-
             element: "CAAT" | "GC" | "SPACER"
-
-            // Enhancer: Multiple TFBS (at least 2)
-            // Different structure from promoter
             enhancer: tfbs tfbs tfbs*
-
             tfbs: "CTCF" | "EBOX"
 
             %import common.WS
@@ -70,13 +58,11 @@ class DNAGrammar:
         self.parser = Lark(
             self.grammar_definition,
             start='regulatory_region',  # Starting symbol
-            parser='lalr',  # LALR parsing algorithm (efficient)
+            parser='lalr',
             keep_all_tokens=True  # Keep all tokens for analysis
         )
 
         print("DNA Context-Free Grammar initialized")
-        print("  - Parser algorithm: LALR")
-        print("  - Structures: Promoter, Enhancer, TFBS")
 
     def parse(self, sequence_structure: str) -> Optional[Tree]:
         """
@@ -84,20 +70,8 @@ class DNAGrammar:
 
         Parameters:
             sequence_structure: String describing regulatory region structure
-                              Example: "TATAWAW SPACER GGYCAATCT SPACER TSS"
         Returns:
             Parse tree if valid, None if parsing fails
-
-        Example:
-            Input:  "TATAWAW ATCG GGYCAATCT GCGC TSS"
-            Output: Tree showing hierarchical structure:
-                    regulatory_region
-                    └── promoter
-                        ├── tata_box
-                        ├── spacer
-                        ├── caat_box
-                        ├── spacer
-                        └── tss
         """
         try:
             tree = self.parser.parse(sequence_structure)
