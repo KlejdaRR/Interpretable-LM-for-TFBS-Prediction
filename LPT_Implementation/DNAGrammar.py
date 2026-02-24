@@ -59,7 +59,7 @@ class DNAGrammar:
             self.grammar_definition,
             start='regulatory_region',  # Starting symbol
             parser='lalr',
-            keep_all_tokens=True  # Keep all tokens for analysis
+            keep_all_tokens=True  # Keeping all tokens for analysis
         )
 
         print("DNA Context-Free Grammar initialized")
