@@ -66,7 +66,7 @@ class DNAGrammar:
 
     def parse(self, sequence_structure: str) -> Optional[Tree]:
         """
-        Method for parsing a DNA structure description into a parse tree.
+        Method for parsing a DNA sequence into a parse tree.
 
         Parameters:
             sequence_structure: String describing regulatory region structure

@@ -10,7 +10,7 @@ Example: The TATA-box is a DNA sequence that helps position RNA polymerase.
 """
 
 import re
-from typing import List, Dict, Tuple
+from typing import Dict
 
 
 class RegexMotifDetector:
@@ -73,7 +73,8 @@ class RegexMotifDetector:
             'polyA_signal': r'A[AT]TAAA'
         }
 
-        # storing the compiled patterns in the class instance in order to reuse them everywhere
+        # using re.compile() method in order to store the compiled patterns in the class
+        # instance in order to reuse them everywhere
         self.compiled_patterns = {
             name: re.compile(pattern)
             for name, pattern in self.motifs.items()
@@ -106,7 +107,7 @@ class RegexMotifDetector:
                 position = match.start()
                 matched_sequence = match.group()
 
-                # Storing (position, sequence)
+                # appending to store each of the groups of DNA sequences where the motif was found
                 matches.append((position, matched_sequence))
 
             if matches:
@@ -116,13 +117,6 @@ class RegexMotifDetector:
 
     def analyze_sequence(self, sequence: str, verbose: bool = True) -> Dict:
         """
-        Analysis of a sequence using regex patterns.
-
-        This shows the limitations of regular expressions:
-        - They can find simple patterns
-        - But cannot capture nested structures or long-range dependencies
-        - That's why we need CFGs and ultimately transformers
-
         Parameters:
             sequence: DNA sequence to analyze
             verbose: Whether to print detailed results
