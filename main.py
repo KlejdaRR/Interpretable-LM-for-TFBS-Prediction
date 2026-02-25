@@ -66,39 +66,6 @@ def evaluate_model(model, dataloader, device):
     return metrics
 
 
-def demonstrate_language_hierarchy(example_sequences):
-    """Demonstrating the complete language processing hierarchy"""
-    print("\n" + "=" * 80)
-    print("FORMAL LANGUAGE HIERARCHY IN DNA ANALYSIS")
-    print("=" * 80)
-
-    # LEVEL 1: Regular Expressions
-    print(" LEVEL 1: REGULAR EXPRESSIONS ")
-    regex_detector = RegexMotifDetector()
-
-    for i, seq in enumerate(example_sequences[:2], 1):
-        print(f"\nExample {i}: {seq[:60]}...")
-        regex_detector.analyze_sequence(seq, verbose=True)
-
-    # LEVEL 2: Context-Free Grammars
-    print(" LEVEL 2: CONTEXT-FREE GRAMMARS ")
-    dna_grammar = DNAGrammar()
-
-    grammar_examples = [
-        "TATA CAAT TSS",
-        "CTCF EBOX CTCF",
-        "TATA SPACER CAAT SPACER GC SPACER TSS"
-    ]
-
-    for example in grammar_examples:
-        print(f"\nTesting structure: {example}")
-        is_valid = dna_grammar.validate_structure(example)
-        print(f"Valid regulatory structure: {is_valid}")
-
-    # LEVEL 3: Transformers
-    print("LEVEL 3: TRANSFORMER NEURAL NETWORKS ")
-
-
 def compare_approaches(sequences, labels, transformer_model, vocabulary, dna_grammar, device):
     """Comparing all three approaches on the same data"""
     print("\n" + "=" * 80)
@@ -112,8 +79,6 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary, dna_gra
         'cfg': {'correct': 0, 'total': 0},
         'transformer': {'correct': 0, 'total': 0, 'probabilities': []}
     }
-
-    print("\nAnalyzing sample sequences...")
 
     for i in range(min(20, len(sequences))):
         seq = sequences[i]
@@ -135,7 +100,6 @@ def compare_approaches(sequences, labels, transformer_model, vocabulary, dna_gra
         results['regex']['total'] += 1
 
         # CFG with structure validation
-
         cfg_pred = 0
 
         # Checking for promoter structure
@@ -248,12 +212,9 @@ def main():
     print("=" * 80)
     vocabulary = DNAVocabulary(k=config['k'])
 
-    # ========== STEP 3: DEMONSTRATING LANGUAGE HIERARCHY ==========
-    demonstrate_language_hierarchy(sequences[:5])
-
-    # ========== STEP 4: PROPER DATA SPLITTING ==========
+    # ========== STEP 3: DATA SPLITTING ==========
     print("\n" + "=" * 80)
-    print("STEP 4: SPLITTING DATA")
+    print("STEP 3: SPLITTING DATA")
     print("=" * 80)
 
     n_total = len(sequences)
@@ -287,9 +248,9 @@ def main():
     print(f"  Val:   +{sum(val_labels)}/{len(val_labels)} ({sum(val_labels) / len(val_labels) * 100:.1f}%)")
     print(f"  Test:  +{sum(test_labels)}/{len(test_labels)} ({sum(test_labels) / len(test_labels) * 100:.1f}%)")
 
-    # ========== STEP 5: CREATING DATASETS ==========
+    # ========== STEP 4: CREATING DATASETS ==========
     print("\n" + "=" * 80)
-    print("STEP 5: CREATING DATASETS")
+    print("STEP 4: CREATING DATASETS")
     print("=" * 80)
 
     train_dataset = TFBSDataset(
@@ -318,9 +279,9 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
 
-    # ========== STEP 6: TRAINING TRANSFORMER ==========
+    # ========== STEP 5: TRAINING TRANSFORMER ==========
     print("\n" + "=" * 80)
-    print("STEP 6: TRAINING TRANSFORMER")
+    print("STEP 5: TRAINING TRANSFORMER")
     print("=" * 80)
 
     transformer_model = TransformerModel(
@@ -346,9 +307,9 @@ def main():
         save_dir=config['output_dir']
     )
 
-    # ========== STEP 7: EVALUATING TRANSFORMER ==========
+    # ========== STEP 6: EVALUATING TRANSFORMER ==========
     print("\n" + "=" * 80)
-    print("STEP 7: EVALUATING TRANSFORMER")
+    print("STEP 6: EVALUATING TRANSFORMER")
     print("=" * 80)
 
     transformer_metrics = evaluate_model(transformer_model, test_loader, config['device'])
@@ -356,7 +317,7 @@ def main():
     for metric, value in transformer_metrics.items():
         print(f"  {metric}: {value:.4f}")
 
-    # ========== STEP 8: COMPARING ALL APPROACHES ==========
+    # ========== STEP 7: COMPARING ALL APPROACHES ==========
     dna_grammar = DNAGrammar()
     comparison_results = compare_approaches(
         test_sequences,
@@ -367,7 +328,7 @@ def main():
         config['device']
     )
 
-    # ========== STEP 9: ATTENTION VISUALIZATION ==========
+    # ========== STEP 8: ATTENTION VISUALIZATION ==========
     print("\n" + "=" * 80)
     print("STEP 8: ATTENTION VISUALIZATION")
     print("=" * 80)

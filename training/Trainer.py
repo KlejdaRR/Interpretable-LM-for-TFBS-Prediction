@@ -1,13 +1,3 @@
-"""
-This module handles training the model.
-
-- Training loop: Repeatedly showing data to model, calculate error, update weights
-- Validation: Checking performance on unseen data to detect overfitting
-- Loss function: Measuring how wrong the model's predictions are
-- Optimizer: Algorithm that updates model weights to reduce loss
-- Early stopping: Stopping training when performance stops improving
-"""
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -17,10 +7,6 @@ import os
 
 
 class Trainer:
-    """
-    A trainer class that handles the training process.
-    """
-
     def __init__(self,
                  model: nn.Module,
                  device: str = None,
@@ -38,10 +24,6 @@ class Trainer:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = torch.device(device)
-
-        print(f"\nTrainer initialized:")
-        print(f"  - Device: {self.device}")
-        print(f"  - Learning rate: {learning_rate}")
 
         self.model = model.to(self.device)
 
@@ -211,15 +193,8 @@ class Trainer:
         It will return:
             Training history dictionary
         """
-        print(f"\n{'=' * 70}")
-        print("STARTING TRAINING")
-        print(f"{'=' * 70}")
-        print(f"Training for up to {num_epochs} epochs")
-        print(f"Early stopping patience: {early_stopping_patience}")
-
         os.makedirs(save_dir, exist_ok=True)
         model_save_path = os.path.join(save_dir, 'best_model.pt')
-        print(f"Model will be saved to: {model_save_path}")
 
         best_val_loss = float('inf')
         patience_counter = 0
@@ -232,11 +207,9 @@ class Trainer:
             print("-" * 70)
 
             # TRAINING PHASE
-            print("Training...")
             train_metrics = self.train_one_epoch(train_loader)
 
             # VALIDATION PHASE
-            print("Validating...")
             val_metrics = self.validate(val_loader)
 
             # UPDATE LEARNING RATE
@@ -280,11 +253,6 @@ class Trainer:
                     break
 
         # TRAINING COMPLETE
-        total_time = time.time() - start_time
-        print(f"\n{'=' * 70}")
-        print("TRAINING COMPLETE")
-        print(f"{'=' * 70}")
-        print(f"Total time: {total_time:.2f}s ({total_time / 60:.2f} minutes)")
         print(f"Best validation loss: {best_val_loss:.4f}")
 
         # Loading best model
